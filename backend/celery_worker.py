@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from celery import Celery
 from dotenv import load_dotenv
+import asyncio
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -67,8 +68,6 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
     """
     Tarefa Celery para processar um único arquivo.
     """
-    import asyncio
-    
     config = ConfigExecucao(**config_dict)
     
     def update_status(etapa: str, progresso: int, detalhes: str = ""):
@@ -83,7 +82,7 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         except Exception as e:
             logger.warning("status_update_failed", erro=str(e))
 
-    try:
+    async def _process_file_async():
         update_status("Iniciando", 5, "Extraindo metadados...")
         html_path = INPUTS_DIR / arquivo_nome
         
@@ -92,8 +91,8 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         
         metadados = extrair_metadados(html_path)
 
-        # Compilar o workflow para esta tarefa específica
-        workflow = compilar_workflow(
+        # Compilar o workflow de forma assíncrona
+        workflow = await compilar_workflow(
             num_ciclos=config.num_ciclos,
             checkpointer_path=str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
         )
@@ -129,8 +128,8 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
 
         update_status("Processando Workflow", 20, "Iniciando composição...")
         
-        # Executar o workflow de forma síncrona dentro do worker
-        resultado = asyncio.run(workflow.ainvoke(initial_state, config_exec))
+        # Executar o workflow
+        resultado = await workflow.ainvoke(initial_state, config_exec)
 
         update_status("Finalizando", 90, "Salvando resultado...")
         output_nome = gerar_nome_saida(html_path, metadados.topico, config.radical, config.id_estilo)
@@ -154,14 +153,20 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
 
         update_status("Concluído", 100, f"Output: {output_nome}")
         
+        return output_nome
+
+    try:
+        # Executar a função assíncrona principal
+        output_file = asyncio.run(_process_file_async())
+        
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
             "status": "concluido",
-            "output_gerado": output_nome
+            "output_gerado": output_file
         })
         
-        return {"sucesso": True, "output": output_nome}
+        return {"sucesso": True, "output": output_file}
 
     except Exception as e:
         logger.error("celery_task_failed", arquivo=arquivo_nome, erro=str(e), exc_info=True)

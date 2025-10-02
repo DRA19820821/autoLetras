@@ -1,8 +1,7 @@
 """Definição do grafo LangGraph para processamento de letras."""
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoints.aiosqlite import AsyncSqliteSaver
 from typing import Dict
-import sqlite3
 
 from backend.app.agents.nodes import MusicaState, node_compositor, node_revisor_juridico, node_ajustador_juridico, node_revisor_linguistico, node_ajustador_linguistico
 from backend.app.utils.logger import get_logger
@@ -57,21 +56,18 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
 
     return workflow
 
-def compilar_workflow(
+async def compilar_workflow(
     num_ciclos: int = 3,
     checkpointer_path: str = "data/checkpoints/checkpoints.db"
 ):
     """
-    Compila o workflow com o checkpointer SQLite.
+    Compila o workflow com o checkpointer aio-sqlite.
     """
     workflow = criar_workflow(num_ciclos)
     
     try:
-        # Criar conexão SQLite
-        conn = sqlite3.connect(checkpointer_path, check_same_thread=False)
-        
-        # Criar checkpointer usando a conexão
-        memory = SqliteSaver(conn)
+        # Usar o checkpointer assíncrono da forma correta
+        memory = AsyncSqliteSaver.from_conn_string(checkpointer_path)
         
         app = workflow.compile(checkpointer=memory)
         logger.info("workflow_compiled_successfully", num_ciclos=num_ciclos, checkpointer=checkpointer_path)
