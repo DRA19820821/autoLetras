@@ -1,6 +1,8 @@
 """Definição do grafo LangGraph para processamento de letras."""
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import Dict
+import sqlite3
 
 from backend.app.agents.nodes import MusicaState, node_compositor, node_revisor_juridico, node_ajustador_juridico, node_revisor_linguistico, node_ajustador_linguistico
 from backend.app.utils.logger import get_logger
@@ -11,7 +13,7 @@ MAX_TENTATIVAS_REVISAO = 5
 
 def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     """
-    Cria a definição do workflow (sem compilar).
+    Cria o workflow completo de composição com N ciclos.
     """
     workflow = StateGraph(MusicaState)
 
@@ -53,5 +55,30 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
 
         workflow.add_conditional_edges(f"revisor_ling_c{ciclo}", router_linguistico)
 
-    logger.info("workflow_definition_created", num_ciclos=num_ciclos)
     return workflow
+
+def compilar_workflow(
+    num_ciclos: int = 3,
+    checkpointer_path: str = "data/checkpoints/checkpoints.db"
+):
+    """
+    Compila o workflow com o checkpointer SQLite.
+    """
+    workflow = criar_workflow(num_ciclos)
+    
+    try:
+        # Criar conexão SQLite
+        conn = sqlite3.connect(checkpointer_path, check_same_thread=False)
+        
+        # Criar checkpointer usando a conexão
+        memory = SqliteSaver(conn)
+        
+        app = workflow.compile(checkpointer=memory)
+        logger.info("workflow_compiled_successfully", num_ciclos=num_ciclos, checkpointer=checkpointer_path)
+        return app
+        
+    except Exception as e:
+        logger.error("workflow_compilation_failed", error=str(e), exc_info=True)
+        logger.warning("compiling_without_checkpointer_as_fallback")
+        app = workflow.compile()
+        return app

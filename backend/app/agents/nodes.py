@@ -1,6 +1,6 @@
 """Nós do LangGraph refatorados para usar Saída Estruturada (Function Calling)."""
-from typing import Tuple, Any
-from langchain_core.pydantic_v1 import BaseModel
+from typing import Literal, TypedDict
+from pydantic import BaseModel, Field
 
 from backend.app.core.llm_client import get_chat_model
 from backend.app.retry.throttler import get_throttler
@@ -10,28 +10,29 @@ from backend.app.api.schemas import LetraMusical, ResultadoRevisao, LetraAjustad
 
 logger = get_logger()
 
+# --- Nós do Grafo com Saída Estruturada ---
+
 async def call_llm_with_structured_output(
     modelo_primario: str,
     modelo_fallback: str,
     system_prompt: str,
     user_prompt: str,
     output_schema: BaseModel
-) -> Tuple[Any, bool]:
+) -> (BaseModel, bool):
     """
     Função helper para chamar um LLM com fallback e esperar uma saída estruturada.
     """
     throttler = get_throttler()
     usou_fallback = False
 
-    async def attempt_call(model_name: str):
-        # CORREÇÃO: Recebe o modelo e o provedor separadamente
-        chat_model, provider = get_chat_model(model_name)
+    async def attempt_call(model_name):
+        chat_model = get_chat_model(model_name)
         structured_llm = chat_model.with_structured_output(output_schema)
         
         async def _api_call():
             return await structured_llm.ainvoke(f"{system_prompt}\n\n{user_prompt}")
         
-        # Passa o nome do provedor para o throttler
+        provider = chat_model.provider
         return await throttler.call(provider, _api_call)
 
     try:
@@ -72,15 +73,13 @@ async def node_compositor(state: MusicaState) -> dict:
         }
     except Exception as e:
         logger.error("compositor_failed", erro=str(e))
-        # Retorna um estado de falha para o grafo poder rotear corretamente
-        return {"letra_atual": state.get('letra_atual', '# FALHA NA COMPOSIÇÃO'), "status_juridico": "falha"}
+        return {"status_juridico": "falha"}
 
 
 async def node_revisor_juridico(state: MusicaState) -> dict:
     ciclo = state['ciclo_atual']
-    tentativa = state.get('tentativas_juridico', 0)
     set_etapa_context(f"revisor_juridico_c{ciclo}")
-    logger.info("revisor_juridico_start", ciclo=ciclo, tentativa=tentativa)
+    logger.info("revisor_juridico_start", ciclo=ciclo, tentativa=state['tentativas_juridico'])
 
     config_ciclo = state['config'][f'ciclo_{ciclo}']
     system_prompt = prompts.REVISOR_JURIDICO_SYSTEM.format(tema=state['tema'])
@@ -92,6 +91,7 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
             config_ciclo['revisor_juridico']['fallback'],
             system_prompt, user_prompt, ResultadoRevisao
         )
+        # Lógica de consistência
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         
@@ -119,26 +119,16 @@ async def node_ajustador_juridico(state: MusicaState) -> dict:
             system_prompt, user_prompt, LetraAjustada
         )
         logger.info("ajustador_juridico_complete", ciclo=ciclo)
-        # CORREÇÃO ANTI-RECURSÃO: Incrementa o contador de tentativas
-        tentativas_atuais = state.get('tentativas_juridico', 0)
-        return {
-            "letra_anterior": state['letra_atual'], 
-            "letra_atual": resultado.letra, 
-            "status_juridico": "pendente",
-            "tentativas_juridico": tentativas_atuais + 1
-        }
+        return {"letra_anterior": state['letra_atual'], "letra_atual": resultado.letra, "status_juridico": "pendente"}
     except Exception as e:
         logger.error("ajustador_juridico_failed", erro=str(e))
-        # Incrementa mesmo em caso de falha para evitar loop infinito
-        tentativas_atuais = state.get('tentativas_juridico', 0)
-        return {"status_juridico": "falha", "tentativas_juridico": tentativas_atuais + 1}
+        return {} # Mantém o estado atual em caso de falha
 
 
 async def node_revisor_linguistico(state: MusicaState) -> dict:
     ciclo = state['ciclo_atual']
-    tentativa = state.get('tentativas_linguistico', 0)
     set_etapa_context(f"revisor_linguistico_c{ciclo}")
-    logger.info("revisor_linguistico_start", ciclo=ciclo, tentativa=tentativa)
+    logger.info("revisor_linguistico_start", ciclo=ciclo, tentativa=state['tentativas_linguistico'])
 
     config_ciclo = state['config'][f'ciclo_{ciclo}']
     system_prompt = prompts.REVISOR_LINGUISTICO_SYSTEM
@@ -179,16 +169,7 @@ async def node_ajustador_linguistico(state: MusicaState) -> dict:
             system_prompt, user_prompt, LetraAjustada
         )
         logger.info("ajustador_linguistico_complete", ciclo=ciclo)
-        # CORREÇÃO ANTI-RECURSÃO: Incrementa o contador de tentativas
-        tentativas_atuais = state.get('tentativas_linguistico', 0)
-        return {
-            "letra_anterior": state['letra_atual'], 
-            "letra_atual": resultado.letra, 
-            "status_linguistico": "pendente",
-            "tentativas_linguistico": tentativas_atuais + 1
-        }
+        return {"letra_anterior": state['letra_atual'], "letra_atual": resultado.letra, "status_linguistico": "pendente"}
     except Exception as e:
         logger.error("ajustador_linguistico_failed", erro=str(e))
-        # Incrementa mesmo em caso de falha para evitar loop infinito
-        tentativas_atuais = state.get('tentativas_linguistico', 0)
-        return {"status_linguistico": "falha", "tentativas_linguistico": tentativas_atuais + 1}
+        return {}
