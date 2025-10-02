@@ -21,10 +21,10 @@ with open(PROJECT_ROOT / "config.yaml") as f:
     CONFIG = yaml.safe_load(f)
 
 # Importar módulos da aplicação
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
 from backend.app.api.schemas import *
@@ -123,6 +123,15 @@ async def criar_execucao(request: IniciarExecucaoRequest):
     logger = get_logger()
     logger.info("execution_started", execucao_id=execucao_id, num_files=len(request.arquivos))
 
+    # Validar que os arquivos existem
+    for arquivo in request.arquivos:
+        arquivo_path = INPUTS_DIR / arquivo
+        if not arquivo_path.exists():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Arquivo '{arquivo}' não encontrado. Por favor, faça o upload novamente."
+            )
+
     # Salvar estado inicial no Redis
     arquivos_status = [
         StatusArquivo(arquivo=arq, status="aguardando", progresso_percentual=0).dict()
@@ -139,7 +148,7 @@ async def criar_execucao(request: IniciarExecucaoRequest):
     for arquivo_nome in request.arquivos:
         processar_arquivo_task.delay(execucao_id, arquivo_nome, request.config.dict())
 
-    return {"execucao_id": execucao_id, "status": "iniciado"}
+    return JSONResponse(content={"execucao_id": execucao_id, "status": "iniciado"})
 
 @app.get("/api/execucoes/{execucao_id}/stream")
 async def stream_execucao(execucao_id: str):
@@ -156,7 +165,6 @@ async def stream_execucao(execucao_id: str):
         current_status = get_execution_status(execucao_id)
         if current_status:
              yield {"event": "status", "data": json.dumps({"type": "full_status", "payload": current_status})}
-
 
         for message in pubsub.listen():
             if message["type"] == "message":

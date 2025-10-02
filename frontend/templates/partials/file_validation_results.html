@@ -1,0 +1,42 @@
+{% for arq in arquivos %}
+<div class="p-3 border rounded-lg {% if arq.valido %}bg-green-50 border-green-200{% else %}bg-red-50 border-red-200{% endif %}">
+    <div class="flex items-start space-x-2">
+        <span class="text-xl {% if arq.valido %}text-green-600{% else %}text-red-600{% endif %}">
+            {% if arq.valido %}✓{% else %}✗{% endif %}
+        </span>
+        <div class="flex-1">
+            <p class="font-medium text-gray-800">{{ arq.arquivo }}</p>
+            {% if arq.valido %}
+                <p class="text-sm text-gray-600 mt-1">
+                    <span class="font-medium">Tema:</span> {{ arq.tema }}<br>
+                    <span class="font-medium">Tópico:</span> {{ arq.topico }}
+                </p>
+                {% if arq.avisos %}
+                    <div class="mt-2 space-y-1">
+                        {% for aviso in arq.avisos %}
+                            <div class="text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded">
+                                ⚠ {{ aviso }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="text-sm text-red-600 mt-1">
+                    <span class="font-medium">Erro:</span> {{ arq.erro }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if not all_valid %}
+<div class="mt-4 p-3 border border-red-300 rounded-lg bg-red-50">
+    <p class="text-sm text-red-800 font-medium">
+        ⚠️ Atenção: Alguns arquivos possuem erros
+    </p>
+    <p class="text-xs text-red-700 mt-1">
+        Por favor, corrija ou remova os arquivos inválidos antes de iniciar o processamento.
+    </p>
+</div>
+{% endif %}
