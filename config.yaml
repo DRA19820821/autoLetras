@@ -1,0 +1,52 @@
+# Configurações de Retry
+retry:
+  max_attempts: 3
+  timeout_inicial: 60
+  timeout_max: 120
+  aumentar_timeout: true
+  backoff_multiplier: 2
+  backoff_min: 2
+  backoff_max: 30
+
+# Throttling por provedor
+throttling:
+  adaptativo: true
+  limites:
+    openai: 5
+    anthropic: 5
+    google: 8
+    deepseek: 3
+
+# Loops de revisão
+loops:
+  max_tentativas_revisao: 5
+
+# Checkpointing
+checkpointing:
+  backend: "sqlite"
+  path: "data/checkpoints/checkpoints.db"
+
+# Alertas de custo
+custos:
+  alerta_por_arquivo: 1.00
+  alerta_total: 10.00
+
+# Logging
+logging:
+  nivel: "INFO"
+  formato_console: "legivel"
+  salvar_por_arquivo: true
+  
+# Processamento
+processamento:
+  max_arquivos_paralelos: 10
+  max_ciclos: 3
+
+# Limites de contexto (tokens)
+limites_contexto:
+  gpt-4: 128000
+  gpt-4-turbo: 128000
+  claude-sonnet-4-5: 200000
+  gemini-2.5-pro: 1000000
+  deepseek-r1: 64000
+  tokens_reservados_prompt: 2000
