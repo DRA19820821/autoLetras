@@ -20,15 +20,13 @@ INPUTS_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Importar módulos da aplicação
 from backend.app.core.parser import extrair_metadados, gerar_nome_saida
-from backend.app.agents.graph import compilar_workflow
+from backend.app.agents.graph import compilar_workflow_async
 from backend.app.api.schemas import ConfigExecucao
 from backend.app.redis_client import redis_conn, publish_status_update
 from backend.app.utils.logger import get_logger
 from backend.app.retry.throttler import init_throttler
 
-# Configuração do Celery
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
@@ -51,26 +49,16 @@ celery_app.conf.update(
 
 logger = get_logger()
 
-# Inicializar throttler
 try:
-    init_throttler({
-        "openai": 5,
-        "anthropic": 5,
-        "google": 8,
-        "deepseek": 3
-    })
+    init_throttler({"openai": 5, "anthropic": 5, "google": 8, "deepseek": 3})
 except Exception as e:
     logger.warning("throttler_init_failed", erro=str(e))
 
 @celery_app.task(name="processar_arquivo_task")
 def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dict):
-    """
-    Tarefa Celery para processar um único arquivo.
-    """
     import asyncio
-    
     config = ConfigExecucao(**config_dict)
-    
+
     def update_status(etapa: str, progresso: int, detalhes: str = ""):
         try:
             publish_status_update(execucao_id, {
@@ -86,18 +74,19 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
     try:
         update_status("Iniciando", 5, "Extraindo metadados...")
         html_path = INPUTS_DIR / arquivo_nome
-        
         if not html_path.exists():
             raise FileNotFoundError(f"Arquivo não encontrado: {html_path}")
-        
         metadados = extrair_metadados(html_path)
 
-        # Compilar o workflow para esta tarefa específica
-        workflow = compilar_workflow(
-            num_ciclos=config.num_ciclos,
-            checkpointer_path=str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
-        )
-
+        # Compilar o workflow de forma assíncrona para que o checkpointer
+        # suporte operações async. O SqliteSaver síncrono não suporta
+        # chamadas assíncronas, portanto utilizamos `compilar_workflow_async`.
+        async def _build_workflow():
+            return await compilar_workflow_async(
+                num_ciclos=config.num_ciclos,
+                checkpointer_path=str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db"),
+            )
+        workflow = asyncio.run(_build_workflow())
         config_modelos = {"ciclo_1": config.ciclo_1.dict()}
         if config.num_ciclos >= 2 and config.ciclo_2:
             config_modelos["ciclo_2"] = config.ciclo_2.dict()
@@ -121,21 +110,22 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             "status_juridico": "pendente",
             "status_linguistico": "pendente",
             "config": config_modelos,
-            "metricas": {"compositor": {}, "custo_total": 0.0}
+            "metricas": {"compositor": {}, "custo_total": 0.0},
         }
-        
+
         thread_id = f"{execucao_id}_{arquivo_nome}"
         config_exec = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
-
         update_status("Processando Workflow", 20, "Iniciando composição...")
-        
-        # Executar o workflow de forma síncrona dentro do worker
-        resultado = asyncio.run(workflow.ainvoke(initial_state, config_exec))
+
+        # Executar o workflow assíncrono dentro de um único loop.
+        async def _executar():
+            return await workflow.ainvoke(initial_state, config_exec)
+
+        resultado = asyncio.run(_executar())
 
         update_status("Finalizando", 90, "Salvando resultado...")
         output_nome = gerar_nome_saida(html_path, metadados.topico, config.radical, config.id_estilo)
         output_path = OUTPUTS_DIR / output_nome
-        
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump({
                 "metadata": {
@@ -146,29 +136,25 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                     "identificador_estilo": config.id_estilo,
                     "radical": config.radical,
                     "timestamp_geracao": datetime.now().isoformat(),
-                    "ciclos_executados": config.num_ciclos
+                    "ciclos_executados": config.num_ciclos,
                 },
                 "letra": resultado["letra_atual"],
-                "metricas": resultado.get("metricas", {})
+                "metricas": resultado.get("metricas", {}),
             }, f, ensure_ascii=False, indent=2)
-
         update_status("Concluído", 100, f"Output: {output_nome}")
-        
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
             "status": "concluido",
-            "output_gerado": output_nome
+            "output_gerado": output_nome,
         })
-        
         return {"sucesso": True, "output": output_nome}
-
     except Exception as e:
         logger.error("celery_task_failed", arquivo=arquivo_nome, erro=str(e), exc_info=True)
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
             "status": "falha",
-            "erro": str(e)
+            "erro": str(e),
         })
         return {"sucesso": False, "erro": str(e)}
