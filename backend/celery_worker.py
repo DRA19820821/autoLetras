@@ -21,7 +21,9 @@ OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 
 from backend.app.core.parser import extrair_metadados, gerar_nome_saida
-from backend.app.agents.graph import compilar_workflow_async
+from backend.app.agents.graph import criar_workflow
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+import aiosqlite
 from backend.app.api.schemas import ConfigExecucao
 from backend.app.redis_client import redis_conn, publish_status_update
 from backend.app.utils.logger import get_logger
@@ -78,21 +80,17 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             raise FileNotFoundError(f"Arquivo não encontrado: {html_path}")
         metadados = extrair_metadados(html_path)
 
-        # Compilar o workflow de forma assíncrona para que o checkpointer
-        # suporte operações async. O SqliteSaver síncrono não suporta
-        # chamadas assíncronas, portanto utilizamos `compilar_workflow_async`.
-        async def _build_workflow():
-            return await compilar_workflow_async(
-                num_ciclos=config.num_ciclos,
-                checkpointer_path=str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db"),
-            )
-        workflow = asyncio.run(_build_workflow())
+        # Determinar caminho do arquivo de checkpoints
+        checkpointer_path = str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
+
+        # Preparar configuração dos modelos
         config_modelos = {"ciclo_1": config.ciclo_1.dict()}
         if config.num_ciclos >= 2 and config.ciclo_2:
             config_modelos["ciclo_2"] = config.ciclo_2.dict()
         if config.num_ciclos >= 3 and config.ciclo_3:
             config_modelos["ciclo_3"] = config.ciclo_3.dict()
 
+        # Construir estado inicial
         initial_state = {
             "arquivo": arquivo_nome,
             "tema": metadados.tema,
@@ -117,11 +115,16 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         config_exec = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
         update_status("Processando Workflow", 20, "Iniciando composição...")
 
-        # Executar o workflow assíncrono dentro de um único loop.
-        async def _executar():
-            return await workflow.ainvoke(initial_state, config_exec)
+        # Função assíncrona que abre a conexão SQLite, compila e executa o grafo
+        async def _run_workflow():
+            async with aiosqlite.connect(checkpointer_path) as conn:
+                saver = AsyncSqliteSaver(conn)
+                builder = criar_workflow(config.num_ciclos)
+                graph = builder.compile(checkpointer=saver)
+                return await graph.ainvoke(initial_state, config_exec)
 
-        resultado = asyncio.run(_executar())
+        # Executar o grafo de forma assíncrona
+        resultado = asyncio.run(_run_workflow())
 
         update_status("Finalizando", 90, "Salvando resultado...")
         output_nome = gerar_nome_saida(html_path, metadados.topico, config.radical, config.id_estilo)
