@@ -3,11 +3,7 @@
 {% block content %}
 <div class="max-w-6xl mx-auto">
     
-    <form id="mainForm" 
-          hx-post="/api/execucoes/" 
-          hx-target="#response-container" 
-          hx-encoding="multipart/form-data"
-          class="space-y-6">
+    <form id="mainForm" class="space-y-6">
 
         <div id="response-container"></div>
         
@@ -34,6 +30,7 @@
                     hx-target="#filesContainer"
                     hx-trigger="change"
                     hx-indicator="#upload-spinner"
+                    hx-encoding="multipart/form-data"
                     required
                 >
             </div>
@@ -55,17 +52,17 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estilo Musical</label>
-                    <input type="text" name="estilo" placeholder="Ex: funk brasileiro" required 
+                    <input type="text" name="estilo" id="estilo" placeholder="Ex: funk brasileiro" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">ID Estilo (2-3 letras)</label>
-                    <input type="text" name="id_estilo" placeholder="Ex: fk" required minlength="2" maxlength="3" 
+                    <input type="text" name="id_estilo" id="id_estilo" placeholder="Ex: fk" required minlength="2" maxlength="3" 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Radical</label>
-                    <input type="text" name="radical" placeholder="Ex: dConst" required 
+                    <input type="text" name="radical" id="radical" placeholder="Ex: dConst" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
             </div>
@@ -100,22 +97,22 @@
                             <div class="space-y-2">
                                 <div>
                                     <label class="text-xs text-gray-600">Primário</label>
-                                    <select name="ciclo_{{ciclo}}.compositor.primario" required
+                                    <select name="ciclo_{{ciclo}}_compositor_primario" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5 ⭐</option>
                                         <option value="claude-opus-4-1">Claude Opus 4.1</option>
                                         <option value="gpt-5">GPT-5</option>
-                                        <option value="gpt-4o">GPT-4o</option>
                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                         <option value="deepseek-chat">DeepSeek Chat 💰</option>
+                                        <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-600">Fallback</label>
-                                    <select name="ciclo_{{ciclo}}.compositor.fallback" required
+                                    <select name="ciclo_{{ciclo}}_compositor_fallback" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
-                                        <option value="gpt-4o" selected>GPT-4o</option>
+                                        <option value="gpt-5" selected>GPT-5</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
@@ -130,22 +127,25 @@
                             <div class="space-y-2">
                                 <div>
                                     <label class="text-xs text-gray-600">Primário</label>
-                                    <select name="ciclo_{{ciclo}}.revisor_juridico.primario" required
+                                    <select name="ciclo_{{ciclo}}_revisor_juridico_primario" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
                                         <option value="claude-opus-4-1">Claude Opus 4.1 ⭐</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                         <option value="gpt-5">GPT-5</option>
-                                        <option value="gpt-4o">GPT-4o</option>
                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                        <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-600">Fallback</label>
-                                    <select name="ciclo_{{ciclo}}.revisor_juridico.fallback" required
+                                    <select name="ciclo_{{ciclo}}_revisor_juridico_fallback" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
-                                        <option value="gpt-4o" selected>GPT-4o</option>
+                                        <option value="gpt-5" selected>GPT-5</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                        <option value="deepseek-chat">DeepSeek Chat</option>
                                     </select>
                                 </div>
                             </div>
@@ -157,22 +157,25 @@
                             <div class="space-y-2">
                                 <div>
                                     <label class="text-xs text-gray-600">Primário</label>
-                                    <select name="ciclo_{{ciclo}}.ajustador_juridico.primario" required
+                                    <select name="ciclo_{{ciclo}}_ajustador_juridico_primario" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
                                         <option value="claude-sonnet-4-5" selected>Claude Sonnet 4.5 ⭐</option>
+                                        <option value="claude-opus-4-1">Claude Opus 4.1</option>
                                         <option value="gpt-5">GPT-5</option>
-                                        <option value="gpt-4o">GPT-4o</option>
                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-600">Fallback</label>
-                                    <select name="ciclo_{{ciclo}}.ajustador_juridico.fallback" required
+                                    <select name="ciclo_{{ciclo}}_ajustador_juridico_fallback" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
-                                        <option value="gpt-4o" selected>GPT-4o</option>
+                                        <option value="gpt-5" selected>GPT-5</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                        <option value="deepseek-chat">DeepSeek Chat</option>
                                     </select>
                                 </div>
                             </div>
@@ -184,21 +187,25 @@
                             <div class="space-y-2">
                                 <div>
                                     <label class="text-xs text-gray-600">Primário</label>
-                                    <select name="ciclo_{{ciclo}}.revisor_linguistico.primario" required
+                                    <select name="ciclo_{{ciclo}}_revisor_linguistico_primario" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
                                         <option value="gemini-2.5-pro" selected>Gemini 2.5 Pro ⭐</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                                        <option value="claude-opus-4-1">Claude Opus 4.1</option>
                                         <option value="gpt-5">GPT-5</option>
-                                        <option value="gpt-4o">GPT-4o</option>
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                        <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-600">Fallback</label>
-                                    <select name="ciclo_{{ciclo}}.revisor_linguistico.fallback" required
+                                    <select name="ciclo_{{ciclo}}_revisor_linguistico_fallback" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
-                                        <option value="gpt-4o" selected>GPT-4o</option>
+                                        <option value="gpt-5" selected>GPT-5</option>
                                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                     </select>
                                 </div>
                             </div>
@@ -210,21 +217,25 @@
                             <div class="space-y-2">
                                 <div>
                                     <label class="text-xs text-gray-600">Primário</label>
-                                    <select name="ciclo_{{ciclo}}.ajustador_linguistico.primario" required
+                                    <select name="ciclo_{{ciclo}}_ajustador_linguistico_primario" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
                                         <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash ⭐</option>
                                         <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                                        <option value="gpt-4o">GPT-4o</option>
+                                        <option value="claude-opus-4-1">Claude Opus 4.1</option>
+                                        <option value="gpt-5">GPT-5</option>
+                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="deepseek-reasoner">DeepSeek Reasoner</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-xs text-gray-600">Fallback</label>
-                                    <select name="ciclo_{{ciclo}}.ajustador_linguistico.fallback" required
+                                    <select name="ciclo_{{ciclo}}_ajustador_linguistico_fallback" required
                                             class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded">
-                                        <option value="gpt-4o" selected>GPT-4o</option>
+                                        <option value="gpt-5" selected>GPT-5</option>
                                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                                         <option value="deepseek-chat">DeepSeek Chat</option>
+                                        <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
                                     </select>
                                 </div>
                             </div>
@@ -240,9 +251,7 @@
                 <p class="text-xs text-gray-600">
                     <strong>Legenda:</strong> 
                     ⭐ = Recomendado | 
-                    💰 = Mais barato (~$0.001/1K tokens) |
-                    <span class="text-blue-600">Primário</span> = Primeira tentativa |
-                    <span class="text-orange-600">Fallback</span> = Se o primário falhar
+                    💰 = Mais barato (~$0.001/1K tokens)
                 </p>
             </div>
         </div>

@@ -14,121 +14,127 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Interceptar o submit do formulário para processar os dados
-    document.body.addEventListener('htmx:configRequest', function(evt) {
-        if (evt.detail.path === '/api/execucoes/') {
-            const form = document.getElementById('mainForm');
-            const formData = new FormData(form);
+    // Interceptar o submit do formulário
+    const mainForm = document.getElementById('mainForm');
+    if (mainForm) {
+        mainForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Coletar nomes dos arquivos
-            const fileInput = document.getElementById('fileInput');
-            const arquivos = Array.from(fileInput.files).map(f => f.name);
+            const submitBtn = document.getElementById('submitBtn');
+            const responseContainer = document.getElementById('response-container');
             
-            if (arquivos.length === 0) {
-                alert('Por favor, selecione ao menos um arquivo HTML.');
-                evt.preventDefault();
-                return false;
+            // Desabilitar botão
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Processando...';
+            
+            try {
+                // Coletar arquivos
+                const fileInput = document.getElementById('fileInput');
+                const arquivos = Array.from(fileInput.files).map(f => f.name);
+                
+                if (arquivos.length === 0) {
+                    throw new Error('Por favor, selecione ao menos um arquivo HTML.');
+                }
+                
+                // Coletar dados do formulário
+                const formData = new FormData(mainForm);
+                const numCiclos = parseInt(document.getElementById('numCiclosSelect').value);
+                
+                // Construir payload
+                const payload = {
+                    arquivos: arquivos,
+                    config: {
+                        estilo: document.getElementById('estilo').value,
+                        id_estilo: document.getElementById('id_estilo').value,
+                        radical: document.getElementById('radical').value,
+                        num_ciclos: numCiclos,
+                        ciclo_1: buildCicloConfig(1),
+                    }
+                };
+                
+                // Adicionar ciclos adicionais
+                if (numCiclos >= 2) {
+                    payload.config.ciclo_2 = buildCicloConfig(2);
+                }
+                if (numCiclos >= 3) {
+                    payload.config.ciclo_3 = buildCicloConfig(3);
+                }
+                
+                console.log('Enviando payload:', payload);
+                
+                // Enviar via fetch
+                const response = await fetch('/api/execucoes/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `Erro HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Resposta:', data);
+                
+                if (data.execucao_id) {
+                    // Redirecionar para monitoramento
+                    window.location.href = `/monitoring/${data.execucao_id}`;
+                } else {
+                    throw new Error('ID de execução não recebido');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                responseContainer.innerHTML = `
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                        <p class="text-red-800 font-semibold">❌ Erro ao iniciar processamento</p>
+                        <p class="text-red-600 text-sm mt-1">${error.message}</p>
+                    </div>
+                `;
+                
+                // Reabilitar botão
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 Iniciar Processamento';
             }
-            
-            // Coletar dados do formulário
-            const numCiclos = parseInt(formData.get('num_ciclos'));
-            
-            // Construir objeto de configuração
-            const config = {
-                estilo: formData.get('estilo'),
-                id_estilo: formData.get('id_estilo'),
-                radical: formData.get('radical'),
-                num_ciclos: numCiclos,
-                ciclo_1: buildCicloConfig(formData, 1),
-            };
-            
-            // Adicionar ciclo 2 se necessário
-            if (numCiclos >= 2) {
-                config.ciclo_2 = buildCicloConfig(formData, 2);
-            }
-            
-            // Adicionar ciclo 3 se necessário
-            if (numCiclos >= 3) {
-                config.ciclo_3 = buildCicloConfig(formData, 3);
-            }
-            
-            // Construir payload final
-            const payload = {
-                arquivos: arquivos,
-                config: config
-            };
-            
-            console.log('Payload enviado:', payload);
-            
-            // Substituir os parâmetros do HTMX pelo nosso payload JSON
-            evt.detail.headers['Content-Type'] = 'application/json';
-            evt.detail.parameters = payload;
-            
-            return true;
-        }
-    });
+        });
+    }
     
     // Helper para construir configuração de um ciclo
-    function buildCicloConfig(formData, cicloNum) {
+    function buildCicloConfig(cicloNum) {
         return {
             compositor: {
-                primario: formData.get(`ciclo_${cicloNum}.compositor.primario`),
-                fallback: formData.get(`ciclo_${cicloNum}.compositor.fallback`)
+                primario: getSelectValue(`ciclo_${cicloNum}_compositor_primario`),
+                fallback: getSelectValue(`ciclo_${cicloNum}_compositor_fallback`)
             },
             revisor_juridico: {
-                primario: formData.get(`ciclo_${cicloNum}.revisor_juridico.primario`),
-                fallback: formData.get(`ciclo_${cicloNum}.revisor_juridico.fallback`)
+                primario: getSelectValue(`ciclo_${cicloNum}_revisor_juridico_primario`),
+                fallback: getSelectValue(`ciclo_${cicloNum}_revisor_juridico_fallback`)
             },
             ajustador_juridico: {
-                primario: formData.get(`ciclo_${cicloNum}.ajustador_juridico.primario`),
-                fallback: formData.get(`ciclo_${cicloNum}.ajustador_juridico.fallback`)
+                primario: getSelectValue(`ciclo_${cicloNum}_ajustador_juridico_primario`),
+                fallback: getSelectValue(`ciclo_${cicloNum}_ajustador_juridico_fallback`)
             },
             revisor_linguistico: {
-                primario: formData.get(`ciclo_${cicloNum}.revisor_linguistico.primario`),
-                fallback: formData.get(`ciclo_${cicloNum}.revisor_linguistico.fallback`)
+                primario: getSelectValue(`ciclo_${cicloNum}_revisor_linguistico_primario`),
+                fallback: getSelectValue(`ciclo_${cicloNum}_revisor_linguistico_fallback`)
             },
             ajustador_linguistico: {
-                primario: formData.get(`ciclo_${cicloNum}.ajustador_linguistico.primario`),
-                fallback: formData.get(`ciclo_${cicloNum}.ajustador_linguistico.fallback`)
+                primario: getSelectValue(`ciclo_${cicloNum}_ajustador_linguistico_primario`),
+                fallback: getSelectValue(`ciclo_${cicloNum}_ajustador_linguistico_fallback`)
             }
         };
     }
     
-    // Lidar com a resposta após iniciar execução
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.elt.id === 'mainForm' && evt.detail.successful) {
-            try {
-                const response = JSON.parse(evt.detail.xhr.responseText);
-                if (response.execucao_id) {
-                    // Redirecionar para a página de monitoramento
-                    console.log('Redirecionando para:', `/monitoring/${response.execucao_id}`);
-                    window.location.href = `/monitoring/${response.execucao_id}`;
-                }
-            } catch (e) {
-                console.error("Erro ao processar resposta:", e);
-                document.getElementById('response-container').innerHTML = 
-                    `<div class="p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p class="text-red-800 font-semibold">Erro ao iniciar processamento</p>
-                        <p class="text-red-600 text-sm mt-1">${e.message}</p>
-                    </div>`;
-            }
-        } else if (evt.detail.elt.id === 'mainForm' && !evt.detail.successful) {
-            // Erro na requisição
-            const statusCode = evt.detail.xhr.status;
-            let errorMsg = 'Erro desconhecido';
-            
-            try {
-                const errorData = JSON.parse(evt.detail.xhr.responseText);
-                errorMsg = errorData.detail || JSON.stringify(errorData);
-            } catch (e) {
-                errorMsg = evt.detail.xhr.responseText || `Erro HTTP ${statusCode}`;
-            }
-            
-            document.getElementById('response-container').innerHTML = 
-                `<div class="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-800 font-semibold">Erro ${statusCode}: Não foi possível iniciar o processamento</p>
-                    <p class="text-red-600 text-sm mt-1">${errorMsg}</p>
-                </div>`;
+    // Helper para pegar valor de select
+    function getSelectValue(name) {
+        const element = document.querySelector(`[name="${name}"]`);
+        if (!element) {
+            console.error(`Select não encontrado: ${name}`);
+            return null;
         }
-    });
+        return element.value;
+    }
 });

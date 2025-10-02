@@ -1,6 +1,7 @@
 import os
 import redis
 import json
+from datetime import datetime
 
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -17,13 +18,14 @@ redis_conn = get_redis_connection()
 def publish_status_update(execucao_id: str, message: dict):
     """Publica uma atualização de status no canal Redis."""
     channel = f"execucao_status:{execucao_id}"
-    redis_conn.publish(channel, json.dumps(message))
+    redis_conn.publish(channel, json.dumps(message, default=str))
 
 def set_execution_status(execucao_id: str, status_data: dict):
     """Salva o status completo de uma execução no Redis."""
     key = f"execucao:{execucao_id}"
-    # Armazena como um hash para permitir atualizações de campos individuais se necessário
-    redis_conn.hset(key, mapping={"status": json.dumps(status_data)})
+    # Converter datetime para string ISO antes de serializar
+    serializable_data = _make_json_serializable(status_data)
+    redis_conn.hset(key, mapping={"status": json.dumps(serializable_data, default=str)})
     # Define um tempo de expiração para a chave (e.g., 24 horas)
     redis_conn.expire(key, 86400)
 
@@ -34,3 +36,16 @@ def get_execution_status(execucao_id: str) -> dict | None:
     if status_json:
         return json.loads(status_json)
     return None
+
+def _make_json_serializable(obj):
+    """
+    Converte objetos não-serializáveis (como datetime) para formatos serializáveis.
+    """
+    if isinstance(obj, dict):
+        return {key: _make_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [_make_json_serializable(item) for item in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        return obj

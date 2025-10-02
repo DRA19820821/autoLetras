@@ -39,7 +39,7 @@ def _detect_provider_from_model(model_name: str) -> str:
     Detecta o provedor baseado no nome do modelo.
     
     Args:
-        model_name: Nome do modelo (ex: "claude-sonnet-4-5", "gpt-4o", "gemini-2.5-pro")
+        model_name: Nome do modelo (ex: "claude-sonnet-4-5", "gpt-5", "gemini-2.5-pro", "deepseek-reasoner")
         
     Returns:
         Nome do provedor: "anthropic", "openai", "google", "deepseek", ou "generic"
@@ -58,7 +58,7 @@ def _detect_provider_from_model(model_name: str) -> str:
     if model_lower.startswith("gpt"):
         return "openai"
     
-    # DeepSeek models
+    # DeepSeek models (inclui deepseek-chat e deepseek-reasoner)
     if "deepseek" in model_lower:
         return "deepseek"
     
@@ -118,13 +118,18 @@ def get_chat_model(
                 f"Modelo '{model}' requer ANTHROPIC_API_KEY, mas não foi encontrada no .env"
             )
         
-        return ChatAnthropic(
+        llm = ChatAnthropic(
             model=model,
             anthropic_api_key=api_key,
             temperature=temp,
             timeout=timeout,
             max_retries=max_retries,
         )
+        
+        # Adicionar atributo para throttler
+        llm.provider = "anthropic"
+        
+        return llm
     
     # GOOGLE (Gemini)
     elif provider == "google":
@@ -134,13 +139,18 @@ def get_chat_model(
                 f"Modelo '{model}' requer GOOGLE_API_KEY, mas não foi encontrada no .env"
             )
         
-        return ChatGoogleGenerativeAI(
+        llm = ChatGoogleGenerativeAI(
             model=model,
             google_api_key=api_key,
             temperature=temp,
             timeout=timeout,
             max_retries=max_retries,
         )
+        
+        # Adicionar atributo para throttler
+        llm.provider = "google"
+        
+        return llm
     
     # OPENAI (GPT)
     elif provider == "openai":
@@ -247,10 +257,10 @@ if __name__ == "__main__":
     test_models = [
         "claude-sonnet-4-5",
         "claude-opus-4-1",
-        "gpt-4o",
         "gpt-5",
+        "gpt-4o",
         "gemini-2.5-pro",
-        "gemini-1.5-flash",
+        "gemini-2.5-flash",
         "deepseek-chat",
         "deepseek-reasoner",
     ]
