@@ -1,6 +1,6 @@
 """Definição do grafo LangGraph para processamento de letras."""
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoints.aiosqlite import AsyncSqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from typing import Dict
 
 from backend.app.agents.nodes import MusicaState, node_compositor, node_revisor_juridico, node_ajustador_juridico, node_revisor_linguistico, node_ajustador_linguistico
