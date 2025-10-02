@@ -1,11 +1,16 @@
 """Aplicação FastAPI principal."""
 import os
+import sys
 import asyncio
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List
 from contextlib import asynccontextmanager
+
+# CRÍTICO: Adicionar diretório backend ao path
+# Isso permite que os imports 'app.*' funcionem
+sys.path.insert(0, str(Path(__file__).parent))
 
 import yaml
 from dotenv import load_dotenv
@@ -26,11 +31,15 @@ from app.utils.logger import setup_logging, get_logger, set_arquivo_context, cle
 # Carregar configurações
 load_dotenv()
 
-with open("config.yaml") as f:
+# Caminho base do projeto (parent do backend)
+BASE_DIR = Path(__file__).parent.parent
+CONFIG_PATH = BASE_DIR / "config.yaml"
+
+with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
-# Diretórios
-DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
+# Diretórios (relativos ao BASE_DIR)
+DATA_DIR = BASE_DIR / Path(os.getenv("DATA_DIR", "data"))
 INPUTS_DIR = DATA_DIR / "inputs"
 OUTPUTS_DIR = DATA_DIR / "outputs"
 LOGS_DIR = DATA_DIR / "logs"
@@ -75,9 +84,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Compositor de Músicas Educativas", lifespan=lifespan)
 
-# Templates e static
-templates = Jinja2Templates(directory="frontend/templates")
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+# Templates e static (relativos ao BASE_DIR)
+FRONTEND_DIR = BASE_DIR / "frontend"
+templates = Jinja2Templates(directory=str(FRONTEND_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
 
 # Estado global de execuções
 execucoes: Dict[str, ExecucaoStatus] = {}

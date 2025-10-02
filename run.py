@@ -12,7 +12,7 @@ def verificar_ambiente():
     erros = []
     
     # Verificar venv
-    if not Path("venv").exists():
+    if not Path("venv").exists() and not Path(".venv").exists():
         erros.append("❌ Virtual environment não encontrado. Execute setup.sh ou setup.bat primeiro.")
     
     # Verificar .env
@@ -28,6 +28,16 @@ def verificar_ambiente():
     for dir_name in dirs_necessarios:
         if not Path(dir_name).exists():
             erros.append(f"❌ Diretório '{dir_name}' não encontrado.")
+    
+    # Verificar arquivos __init__.py
+    init_files = [
+        "backend/__init__.py",
+        "backend/app/__init__.py",
+    ]
+    
+    faltando_init = [f for f in init_files if not Path(f).exists()]
+    if faltando_init:
+        erros.append(f"❌ Arquivos __init__.py faltando. Execute: python criar_init_files.py")
     
     return erros
 
@@ -46,7 +56,11 @@ def main():
         for erro in erros:
             print(f"  {erro}")
         print("\nPor favor, corrija os problemas acima antes de continuar.")
-        print("Execute './setup.sh' (Linux/Mac) ou 'setup.bat' (Windows) para configurar.")
+        print()
+        print("Passos para corrigir:")
+        print("1. Execute: python criar_init_files.py")
+        print("2. Configure o .env com suas API keys")
+        print("3. Execute novamente: python run.py")
         sys.exit(1)
     
     print("✓ Ambiente OK")
@@ -62,11 +76,17 @@ def main():
         
         # Determinar comando de ativação baseado no SO
         if sys.platform == "win32":
-            activate_script = "venv\\Scripts\\activate.bat"
+            if Path(".venv").exists():
+                activate_script = ".venv\\Scripts\\activate.bat"
+            else:
+                activate_script = "venv\\Scripts\\activate.bat"
             print(f"\nExecute: {activate_script}")
             print("E então: python run.py")
         else:
-            activate_script = "source venv/bin/activate"
+            if Path(".venv").exists():
+                activate_script = "source .venv/bin/activate"
+            else:
+                activate_script = "source venv/bin/activate"
             print(f"\nExecute: {activate_script}")
             print("E então: python run.py")
         
@@ -84,12 +104,16 @@ def main():
     print()
     
     try:
-        # Executar com uvicorn
+        # Mudar para diretório backend e executar
+        backend_dir = Path(__file__).parent / "backend"
+        os.chdir(backend_dir)
+        
+        # Executar com uvicorn diretamente do diretório backend
         subprocess.run([
             sys.executable,
             "-m",
             "uvicorn",
-            "backend.main:app",
+            "main:app",
             "--host", os.getenv("HOST", "0.0.0.0"),
             "--port", os.getenv("PORT", "8000"),
             "--reload"
