@@ -1,6 +1,7 @@
-"""Definição do grafo LangGraph para processamento de letras."""
+"""Definição do grafo LangGraph para processamento de letras - CORRIGIDO."""
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
+from typing import Literal
 
 from app.agents.nodes import (
     MusicaState,
@@ -25,7 +26,7 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
         num_ciclos: Número de ciclos a executar (1-3)
         
     Returns:
-        StateGraph compilado
+        StateGraph configurado (não compilado)
     """
     workflow = StateGraph(MusicaState)
     
@@ -37,23 +38,11 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
         # Revisor jurídico
         workflow.add_node(f"revisor_jur_c{ciclo}", node_revisor_juridico)
         
-        # Decisor jurídico
-        workflow.add_node(
-            f"decisor_jur_c{ciclo}",
-            lambda state: decisor_juridico(state, ciclo)
-        )
-        
         # Ajustador jurídico
         workflow.add_node(f"ajustador_jur_c{ciclo}", node_ajustador_juridico)
         
         # Revisor linguístico
         workflow.add_node(f"revisor_ling_c{ciclo}", node_revisor_linguistico)
-        
-        # Decisor linguístico
-        workflow.add_node(
-            f"decisor_ling_c{ciclo}",
-            lambda state: decisor_linguistico(state, ciclo)
-        )
         
         # Ajustador linguístico
         workflow.add_node(f"ajustador_ling_c{ciclo}", node_ajustador_linguistico)
@@ -64,104 +53,119 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
             # Primeiro ciclo começa no compositor
             workflow.add_edge(START, f"compositor_c{ciclo}")
         else:
-            # Ciclos subsequentes vêm do ciclo anterior
-            workflow.add_edge(
-                f"decisor_ling_c{ciclo-1}",
-                f"compositor_c{ciclo}"
-            )
+            # Ciclos subsequentes vêm do ajuste linguístico do ciclo anterior
+            # (que só é alcançado se ainda houver ciclos)
+            pass
         
         # Fluxo dentro do ciclo
         # Compositor → Revisor Jurídico
         workflow.add_edge(f"compositor_c{ciclo}", f"revisor_jur_c{ciclo}")
         
-        # Revisor Jurídico → Decisor Jurídico
-        workflow.add_edge(f"revisor_jur_c{ciclo}", f"decisor_jur_c{ciclo}")
-        
-        # Decisor Jurídico: loop ou prosseguir
-        def router_juridico(state: MusicaState):
-            """Roteador para loop jurídico."""
-            ciclo_atual = state['ciclo_atual']
-            status = state['status_juridico']
-            tentativas = state['tentativas_juridico']
+        # Revisor Jurídico → Decisão (aprovar ou ajustar)
+        def criar_router_juridico(ciclo_atual: int):
+            """Cria roteador para loop jurídico de um ciclo específico."""
+            def router(state: MusicaState) -> Literal[str]:
+                """Roteador para loop jurídico."""
+                status = state['status_juridico']
+                tentativas = state['tentativas_juridico']
+                
+                # Se aprovado ou esgotou tentativas → prosseguir
+                if status == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
+                    return f"revisor_ling_c{ciclo_atual}"
+                
+                # Se falha crítica → prosseguir mesmo assim
+                if status == 'falha':
+                    logger.warning(
+                        "juridico_falha_critica",
+                        ciclo=ciclo_atual,
+                        msg="Prosseguindo com letra atual"
+                    )
+                    return f"revisor_ling_c{ciclo_atual}"
+                
+                # Reprovado e ainda tem tentativas → ajustar
+                return f"ajustador_jur_c{ciclo_atual}"
             
-            # Se aprovado ou esgotou tentativas → prosseguir
-            if status == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
-                return f"revisor_ling_c{ciclo_atual}"
-            
-            # Se falha crítica → prosseguir mesmo assim
-            if status == 'falha':
-                logger.warning(
-                    "juridico_falha_critica",
-                    ciclo=ciclo_atual,
-                    msg="Prosseguindo com letra atual"
-                )
-                return f"revisor_ling_c{ciclo_atual}"
-            
-            # Reprovado e ainda tem tentativas → ajustar
-            return f"ajustador_jur_c{ciclo_atual}"
+            return router
         
         workflow.add_conditional_edges(
-            f"decisor_jur_c{ciclo}",
-            router_juridico
+            f"revisor_jur_c{ciclo}",
+            criar_router_juridico(ciclo),
+            [f"ajustador_jur_c{ciclo}", f"revisor_ling_c{ciclo}"]
         )
         
         # Ajustador Jurídico → Incrementar contador e voltar ao Revisor
-        def incrementar_juridico(state: MusicaState):
-            state['tentativas_juridico'] += 1
-            return state
+        def criar_incrementador_juridico(ciclo_atual: int):
+            """Cria função para incrementar tentativas jurídicas."""
+            async def incrementar(state: MusicaState) -> MusicaState:
+                state['tentativas_juridico'] += 1
+                state['ciclo_atual'] = ciclo_atual
+                return state
+            return incrementar
         
         workflow.add_node(
             f"inc_jur_c{ciclo}",
-            incrementar_juridico
+            criar_incrementador_juridico(ciclo)
         )
         
         workflow.add_edge(f"ajustador_jur_c{ciclo}", f"inc_jur_c{ciclo}")
         workflow.add_edge(f"inc_jur_c{ciclo}", f"revisor_jur_c{ciclo}")
         
-        # Revisor Linguístico → Decisor Linguístico
-        workflow.add_edge(f"revisor_ling_c{ciclo}", f"decisor_ling_c{ciclo}")
+        # Revisor Linguístico → Decisão (aprovar, ajustar ou próximo ciclo)
+        def criar_router_linguistico(ciclo_atual: int, total_ciclos: int):
+            """Cria roteador para loop linguístico de um ciclo específico."""
+            def router(state: MusicaState) -> Literal[str]:
+                """Roteador para loop linguístico."""
+                status = state['status_linguistico']
+                tentativas = state['tentativas_linguistico']
+                
+                # Se aprovado ou esgotou tentativas
+                if status == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
+                    # Último ciclo → finalizar
+                    if ciclo_atual >= total_ciclos:
+                        return END
+                    # Ainda tem ciclos → próximo ciclo
+                    return f"compositor_c{ciclo_atual + 1}"
+                
+                # Falha crítica
+                if status == 'falha':
+                    logger.warning(
+                        "linguistico_falha_critica",
+                        ciclo=ciclo_atual
+                    )
+                    if ciclo_atual >= total_ciclos:
+                        return END
+                    return f"compositor_c{ciclo_atual + 1}"
+                
+                # Reprovado e ainda tem tentativas → ajustar
+                return f"ajustador_ling_c{ciclo_atual}"
+            
+            return router
         
-        # Decisor Linguístico: loop ou prosseguir
-        def router_linguistico(state: MusicaState):
-            """Roteador para loop linguístico."""
-            ciclo_atual = state['ciclo_atual']
-            status = state['status_linguistico']
-            tentativas = state['tentativas_linguistico']
-            
-            # Se aprovado ou esgotou tentativas
-            if status == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
-                # Último ciclo → finalizar
-                if ciclo_atual >= num_ciclos:
-                    return END
-                # Ainda tem ciclos → próximo ciclo
-                return f"compositor_c{ciclo_atual + 1}"
-            
-            # Falha crítica
-            if status == 'falha':
-                logger.warning(
-                    "linguistico_falha_critica",
-                    ciclo=ciclo_atual
-                )
-                if ciclo_atual >= num_ciclos:
-                    return END
-                return f"compositor_c{ciclo_atual + 1}"
-            
-            # Reprovado e ainda tem tentativas → ajustar
-            return f"ajustador_ling_c{ciclo_atual}"
+        # Opções possíveis de roteamento
+        opcoes_routing = [f"ajustador_ling_c{ciclo}"]
+        if ciclo < num_ciclos:
+            opcoes_routing.append(f"compositor_c{ciclo + 1}")
+        else:
+            opcoes_routing.append(END)
         
         workflow.add_conditional_edges(
-            f"decisor_ling_c{ciclo}",
-            router_linguistico
+            f"revisor_ling_c{ciclo}",
+            criar_router_linguistico(ciclo, num_ciclos),
+            opcoes_routing
         )
         
         # Ajustador Linguístico → Incrementar e voltar
-        def incrementar_linguistico(state: MusicaState):
-            state['tentativas_linguistico'] += 1
-            return state
+        def criar_incrementador_linguistico(ciclo_atual: int):
+            """Cria função para incrementar tentativas linguísticas."""
+            async def incrementar(state: MusicaState) -> MusicaState:
+                state['tentativas_linguistico'] += 1
+                state['ciclo_atual'] = ciclo_atual
+                return state
+            return incrementar
         
         workflow.add_node(
             f"inc_ling_c{ciclo}",
-            incrementar_linguistico
+            criar_incrementador_linguistico(ciclo)
         )
         
         workflow.add_edge(f"ajustador_ling_c{ciclo}", f"inc_ling_c{ciclo}")
@@ -170,27 +174,10 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     return workflow
 
 
-def decisor_juridico(state: MusicaState, ciclo: int) -> MusicaState:
-    """
-    Nó decisor para loop jurídico.
-    Apenas prepara estado, routing é feito pelo router.
-    """
-    # O routing real é feito pela função condicional
-    # Este nó apenas garante que o estado está pronto
-    return state
-
-
-def decisor_linguistico(state: MusicaState, ciclo: int) -> MusicaState:
-    """
-    Nó decisor para loop linguístico.
-    """
-    return state
-
-
 def compilar_workflow(
     num_ciclos: int = 3,
     checkpointer_path: str = "data/checkpoints/checkpoints.db"
-) -> StateGraph:
+):
     """
     Compila workflow com checkpointer.
     
@@ -203,16 +190,35 @@ def compilar_workflow(
     """
     workflow = criar_workflow(num_ciclos)
     
-    # Configurar checkpointer
-    checkpointer = SqliteSaver.from_conn_string(checkpointer_path)
-    
-    # Compilar
-    app = workflow.compile(checkpointer=checkpointer)
-    
-    logger.info(
-        "workflow_compiled",
-        num_ciclos=num_ciclos,
-        checkpointer=checkpointer_path
-    )
-    
-    return app
+    # Configurar checkpointer com conexão síncrona
+    # IMPORTANTE: SqliteSaver.from_conn_string retorna um context manager
+    # que precisa ser usado corretamente
+    try:
+        # Criar checkpointer de forma síncrona
+        from sqlite3 import connect
+        
+        # Garantir que o diretório existe
+        import os
+        os.makedirs(os.path.dirname(checkpointer_path), exist_ok=True)
+        
+        # Criar conexão
+        conn = connect(checkpointer_path)
+        checkpointer = SqliteSaver(conn)
+        
+        # Compilar
+        app = workflow.compile(checkpointer=checkpointer)
+        
+        logger.info(
+            "workflow_compiled",
+            num_ciclos=num_ciclos,
+            checkpointer=checkpointer_path
+        )
+        
+        return app
+        
+    except Exception as e:
+        logger.error("workflow_compilation_failed", erro=str(e))
+        # Se falhar, compilar sem checkpointer
+        logger.warning("compiling_without_checkpointer")
+        app = workflow.compile()
+        return app

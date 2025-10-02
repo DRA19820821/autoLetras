@@ -1,4 +1,4 @@
-"""Aplicação FastAPI principal."""
+"""Aplicação FastAPI principal - CORRIGIDO."""
 import os
 import sys
 import asyncio
@@ -10,7 +10,8 @@ from contextlib import asynccontextmanager
 
 # CRÍTICO: Adicionar diretório backend ao path
 # Isso permite que os imports 'app.*' funcionem
-sys.path.insert(0, str(Path(__file__).parent))
+BACKEND_DIR = Path(__file__).parent
+sys.path.insert(0, str(BACKEND_DIR))
 
 import yaml
 from dotenv import load_dotenv
@@ -31,23 +32,37 @@ from app.utils.logger import setup_logging, get_logger, set_arquivo_context, cle
 # Carregar configurações
 load_dotenv()
 
-# Caminho base do projeto (parent do backend)
-BASE_DIR = Path(__file__).parent.parent
-CONFIG_PATH = BASE_DIR / "config.yaml"
+# IMPORTANTE: Caminho base é o ROOT DO PROJETO (não backend/)
+# Porque o servidor será executado do root
+PROJECT_ROOT = BACKEND_DIR.parent
+CONFIG_PATH = PROJECT_ROOT / "config.yaml"
+
+print(f"🔍 DEBUG - BACKEND_DIR: {BACKEND_DIR}")
+print(f"🔍 DEBUG - PROJECT_ROOT: {PROJECT_ROOT}")
+print(f"🔍 DEBUG - CONFIG_PATH: {CONFIG_PATH}")
+
+if not CONFIG_PATH.exists():
+    print(f"❌ ERRO: config.yaml não encontrado em {CONFIG_PATH}")
+    sys.exit(1)
 
 with open(CONFIG_PATH) as f:
     CONFIG = yaml.safe_load(f)
 
-# Diretórios (relativos ao BASE_DIR)
-DATA_DIR = BASE_DIR / Path(os.getenv("DATA_DIR", "data"))
+# Diretórios (relativos ao PROJECT_ROOT)
+DATA_DIR = PROJECT_ROOT / Path(os.getenv("DATA_DIR", "data"))
 INPUTS_DIR = DATA_DIR / "inputs"
 OUTPUTS_DIR = DATA_DIR / "outputs"
 LOGS_DIR = DATA_DIR / "logs"
 CHECKPOINTS_DIR = DATA_DIR / "checkpoints"
 
+print(f"🔍 DEBUG - DATA_DIR: {DATA_DIR}")
+print(f"🔍 DEBUG - INPUTS_DIR: {INPUTS_DIR}")
+print(f"🔍 DEBUG - FRONTEND: {PROJECT_ROOT / 'frontend'}")
+
 # Criar diretórios
 for dir_path in [INPUTS_DIR, OUTPUTS_DIR, LOGS_DIR, CHECKPOINTS_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
+    print(f"✓ Diretório: {dir_path}")
 
 
 @asynccontextmanager
@@ -84,8 +99,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Compositor de Músicas Educativas", lifespan=lifespan)
 
-# Templates e static (relativos ao BASE_DIR)
-FRONTEND_DIR = BASE_DIR / "frontend"
+# Templates e static (relativos ao PROJECT_ROOT)
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
+
+if not FRONTEND_DIR.exists():
+    print(f"❌ ERRO: Diretório frontend não encontrado em {FRONTEND_DIR}")
+    sys.exit(1)
+
+print(f"✓ Frontend dir: {FRONTEND_DIR}")
+
 templates = Jinja2Templates(directory=str(FRONTEND_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
 
@@ -159,16 +181,22 @@ async def upload_arquivos(files: List[UploadFile] = File(...)):
     """Upload de arquivos HTML."""
     resultados = []
     
+    print(f"📥 Recebidos {len(files)} arquivos para upload")
+    
     for file in files:
+        print(f"  - Processando: {file.filename}")
+        
         # Salvar arquivo
         file_path = INPUTS_DIR / file.filename
         
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
-        # Validar
         try:
+            with open(file_path, "wb") as f:
+                content = await file.read()
+                f.write(content)
+            
+            print(f"    ✓ Salvo em: {file_path}")
+            
+            # Validar
             metadados = extrair_metadados(file_path)
             resultados.append(ArquivoValidacao(
                 arquivo=file.filename,
@@ -177,11 +205,21 @@ async def upload_arquivos(files: List[UploadFile] = File(...)):
                 topico=metadados.topico,
                 avisos=metadados.avisos
             ))
+            print(f"    ✓ Validado: {metadados.tema} - {metadados.topico}")
+            
         except ValidationError as e:
+            print(f"    ✗ Erro de validação: {e.erro}")
             resultados.append(ArquivoValidacao(
                 arquivo=file.filename,
                 valido=False,
                 erro=e.erro
+            ))
+        except Exception as e:
+            print(f"    ✗ Erro inesperado: {e}")
+            resultados.append(ArquivoValidacao(
+                arquivo=file.filename,
+                valido=False,
+                erro=str(e)
             ))
     
     return {"arquivos": resultados}
@@ -194,6 +232,11 @@ async def criar_execucao(
 ):
     """Inicia nova execução."""
     execucao_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    print(f"\n🚀 Iniciando execução {execucao_id}")
+    print(f"   Arquivos: {len(request.arquivos)}")
+    print(f"   Ciclos: {request.config.num_ciclos}")
+    print(f"   Estilo: {request.config.estilo}")
     
     # Criar status inicial
     arquivos_status = [
@@ -219,6 +262,8 @@ async def criar_execucao(
         processar_lote(execucao_id, request.arquivos, request.config)
     )
     execucoes_tasks[execucao_id] = task
+    
+    print(f"   ✓ Execução {execucao_id} iniciada")
     
     return {"execucao_id": execucao_id, "status": "iniciado"}
 
@@ -300,31 +345,42 @@ async def processar_arquivo(
             config_modelos["ciclo_3"] = config.ciclo_3.dict()
         
         # Estado inicial
-        initial_state = MusicaState(
-            arquivo=arquivo_nome,
-            tema=metadados.tema,
-            topico=metadados.topico,
-            conteudo=metadados.conteudo,
-            estilo=config.estilo,
-            ciclo_atual=1,
-            etapa_atual="compositor",
-            letra_atual="",
-            letra_anterior=None,
-            problemas_juridicos=[],
-            problemas_linguisticos=[],
-            tentativas_juridico=0,
-            tentativas_linguistico=0,
-            status_juridico="pendente",
-            status_linguistico="pendente",
-            config=config_modelos,
-            metricas={"compositor": {}, "custo_total": 0.0}
-        )
+        initial_state = {
+            "arquivo": arquivo_nome,
+            "tema": metadados.tema,
+            "topico": metadados.topico,
+            "conteudo": metadados.conteudo,
+            "estilo": config.estilo,
+            "ciclo_atual": 1,
+            "etapa_atual": "compositor",
+            "letra_atual": "",
+            "letra_anterior": None,
+            "problemas_juridicos": [],
+            "problemas_linguisticos": [],
+            "tentativas_juridico": 0,
+            "tentativas_linguistico": 0,
+            "status_juridico": "pendente",
+            "status_linguistico": "pendente",
+            "config": config_modelos,
+            "metricas": {"compositor": {}, "custo_total": 0.0}
+        }
         
         # Executar workflow
         thread_id = f"{execucao_id}_{arquivo_nome}"
-        config_exec = {"configurable": {"thread_id": thread_id}}
+        config_exec = {
+            "configurable": {"thread_id": thread_id},
+            "recursion_limit": 100  # Aumentar limite para evitar erro prematuro
+        }
         
-        resultado = await workflow.ainvoke(initial_state, config_exec)
+        logger.info("workflow_starting", arquivo=arquivo_nome, thread_id=thread_id)
+        
+        try:
+            # Invocar workflow de forma assíncrona
+            resultado = await workflow.ainvoke(initial_state, config_exec)
+            logger.info("workflow_completed", arquivo=arquivo_nome)
+        except Exception as e:
+            logger.error("workflow_execution_error", arquivo=arquivo_nome, erro=str(e))
+            raise
         
         # Salvar output
         output_nome = gerar_nome_saida(
@@ -410,6 +466,16 @@ async def stream_execucao(execucao_id: str):
 async def get_provedores():
     """Retorna status dos provedores."""
     return app.state.provedores_disponiveis
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "execucoes_ativas": len([e for e in execucoes.values() if e.status == "processando"])
+    }
 
 
 if __name__ == "__main__":

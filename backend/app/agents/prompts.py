@@ -103,7 +103,7 @@ REVISOR_JURIDICO_SYSTEM = """Você é um especialista em {tema} e conteúdo jur�
 
 FOCO: Validar exclusivamente a precisão técnica e jurídica do conteúdo e sugerir ajustes que preservem a precisão jurídica.
 
-ANÁLISE MINUCIOSA:
+ANÁLISE:
 - Verificar fidedignidade com o material original
 - Identificar conceitos ausentes ou distorcidos
 - Detectar rimas que alterem significado jurídico
@@ -113,7 +113,7 @@ ANÁLISE MINUCIOSA:
 Resposta:
 - Lista de problemas encontrados, caso existam, e a respectiva sugestão de correção.
 
-Seja rigoroso e objetivo. Liste apenas problemas concretos.
+Seja técnico e objetivo. Liste apenas problemas concretos.
 
 FORMATO DA RESPOSTA:
 {{
@@ -123,7 +123,7 @@ FORMATO DA RESPOSTA:
 }}
 """
 
-REVISOR_JURIDICO_PROMPT = """Valide, minuciosamente, a precisão dos conceitos jurídicos na letra educativa abaixo.
+REVISOR_JURIDICO_PROMPT = """Valide a precisão dos conceitos jurídicos na letra educativa abaixo.
 
 TEMA: {tema} - {topico}
 
@@ -203,7 +203,7 @@ REVISOR_LINGUISTICO_SYSTEM = """Você é um especialista em controle de qualidad
 - Revisão ortográfica e gramatical em português brasileiro
 
 SEU PAPEL:
-Atuar como validador crítico e minucioso, verificando se letras de músicas educativas atendem rigorosamente aos critérios estabelecidos para uso no Suno.com.
+Atuar como validador crítico, verificando se letras de músicas educativas atendem  aos critérios estabelecidos para uso no Suno.com.
 
 METODOLOGIA DE VALIDAÇÃO:
 

@@ -1,6 +1,7 @@
-"""Nós do LangGraph para processamento de letras."""
+"""Nós do LangGraph para processamento de letras - CORRIGIDO."""
 import json
-from typing import Literal
+import re
+from typing import Literal, TypedDict
 from pydantic import BaseModel, ValidationError
 
 from app.core.llm_client import LLMClient, get_provider
@@ -9,6 +10,22 @@ from app.agents import prompts
 from app.utils.logger import get_logger, set_etapa_context
 
 logger = get_logger()
+
+
+def sanitizar_json(texto: str) -> str:
+    """
+    Remove caracteres de controle inválidos de um JSON.
+    
+    Args:
+        texto: String JSON potencialmente com caracteres inválidos
+        
+    Returns:
+        String JSON limpa
+    """
+    # Remover caracteres de controle exceto \n, \r, \t que são válidos quando escapados
+    # Regex: remove caracteres ASCII de controle (0x00-0x1F) exceto \n \r \t
+    texto_limpo = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', texto)
+    return texto_limpo
 
 
 class ResultadoRevisao(BaseModel):
@@ -23,7 +40,8 @@ class ResultadoAjuste(BaseModel):
     letra: str
 
 
-class MusicaState(dict):
+# TypedDict para o estado (para type hints melhores)
+class MusicaState(TypedDict):
     """Estado do workflow de composição."""
     # Dados do arquivo
     arquivo: str
@@ -65,8 +83,8 @@ async def node_compositor(state: MusicaState) -> MusicaState:
     """
     Nó compositor - cria letra inicial da música.
     """
-    set_etapa_context(f"compositor_c{state['ciclo_atual']}")
     ciclo = state['ciclo_atual']
+    set_etapa_context(f"compositor_c{ciclo}")
     
     logger.info("compositor_start", ciclo=ciclo)
     
@@ -102,19 +120,27 @@ async def node_compositor(state: MusicaState) -> MusicaState:
         
         resposta, usou_fallback = await throttler.call(provider_primario, _call)
         
-        # Parsear JSON
+        # Parsear JSON com sanitização
         try:
-            resultado = json.loads(resposta.content)
+            content_limpo = sanitizar_json(resposta.content)
+            resultado_dict = json.loads(content_limpo)
             letra = resultado.get('letra', '')
             
             if not letra:
                 raise ValueError("Letra vazia no resultado")
             
-            # Atualizar estado
-            state['letra_atual'] = letra
-            state['status_juridico'] = 'pendente'
+            # Atualizar estado - retornar dict com updates
+            updates = {
+                'letra_atual': letra,
+                'status_juridico': 'pendente',
+                'tentativas_juridico': 0,  # Reset para este ciclo
+                'etapa_atual': 'revisor_juridico'
+            }
             
             # Atualizar métricas
+            if 'compositor' not in state['metricas']:
+                state['metricas']['compositor'] = {}
+            
             state['metricas']['compositor'][ciclo] = {
                 'modelo_usado': resposta.modelo_usado,
                 'tokens_in': resposta.tokens_input,
@@ -130,25 +156,24 @@ async def node_compositor(state: MusicaState) -> MusicaState:
                 custo=f"${resposta.custo:.4f}"
             )
             
-            return state
+            # Retornar state atualizado
+            return {**state, **updates}
             
         except (json.JSONDecodeError, ValueError) as e:
             logger.error("compositor_invalid_json", erro=str(e))
-            state['status_juridico'] = 'falha'
-            return state
+            return {**state, 'status_juridico': 'falha'}
     
     except Exception as e:
         logger.error("compositor_failed", erro=str(e))
-        state['status_juridico'] = 'falha'
-        return state
+        return {**state, 'status_juridico': 'falha'}
 
 
 async def node_revisor_juridico(state: MusicaState) -> MusicaState:
     """
     Nó revisor jurídico - valida precisão jurídica da letra.
     """
-    set_etapa_context(f"revisor_juridico_c{state['ciclo_atual']}")
     ciclo = state['ciclo_atual']
+    set_etapa_context(f"revisor_juridico_c{ciclo}")
     
     logger.info("revisor_juridico_start", ciclo=ciclo, tentativa=state['tentativas_juridico'])
     
@@ -181,8 +206,10 @@ async def node_revisor_juridico(state: MusicaState) -> MusicaState:
         
         resposta, usou_fallback = await throttler.call(provider_primario, _call)
         
-        # Parsear e validar
-        resultado_dict = json.loads(resposta.content)
+        # Parsear e validar JSON com sanitização
+        try:
+            content_limpo = sanitizar_json(resposta.content)
+            resultado_dict = json.loads(content_limpo)
         resultado = ResultadoRevisao(**resultado_dict)
         
         # Validar consistência
@@ -191,8 +218,11 @@ async def node_revisor_juridico(state: MusicaState) -> MusicaState:
             resultado.status = "reprovado"
         
         # Atualizar estado
-        state['status_juridico'] = resultado.status
-        state['problemas_juridicos'] = resultado.problemas
+        updates = {
+            'status_juridico': resultado.status,
+            'problemas_juridicos': resultado.problemas,
+            'etapa_atual': 'decisor_juridico'
+        }
         
         logger.info(
             "revisor_juridico_complete",
@@ -201,20 +231,19 @@ async def node_revisor_juridico(state: MusicaState) -> MusicaState:
             num_problemas=len(resultado.problemas)
         )
         
-        return state
+        return {**state, **updates}
         
     except Exception as e:
         logger.error("revisor_juridico_failed", erro=str(e))
-        state['status_juridico'] = 'falha'
-        return state
+        return {**state, 'status_juridico': 'falha'}
 
 
 async def node_ajustador_juridico(state: MusicaState) -> MusicaState:
     """
     Nó ajustador jurídico - corrige problemas jurídicos apontados.
     """
-    set_etapa_context(f"ajustador_juridico_c{state['ciclo_atual']}")
     ciclo = state['ciclo_atual']
+    set_etapa_context(f"ajustador_juridico_c{ciclo}")
     
     logger.info("ajustador_juridico_start", ciclo=ciclo, tentativa=state['tentativas_juridico'])
     
@@ -248,18 +277,23 @@ async def node_ajustador_juridico(state: MusicaState) -> MusicaState:
         
         resposta, usou_fallback = await throttler.call(provider_primario, _call)
         
-        # Parsear
-        resultado_dict = json.loads(resposta.content)
+        # Parsear JSON com sanitização
+        try:
+            content_limpo = sanitizar_json(resposta.content)
+            resultado_dict = json.loads(content_limpo)
         resultado = ResultadoAjuste(**resultado_dict)
         
         # Atualizar estado
-        state['letra_anterior'] = state['letra_atual']
-        state['letra_atual'] = resultado.letra
-        state['status_juridico'] = 'pendente'  # Resetar para nova revisão
+        updates = {
+            'letra_anterior': state['letra_atual'],
+            'letra_atual': resultado.letra,
+            'status_juridico': 'pendente',  # Resetar para nova revisão
+            'etapa_atual': 'incrementador_juridico'
+        }
         
         logger.info("ajustador_juridico_complete", ciclo=ciclo)
         
-        return state
+        return {**state, **updates}
         
     except Exception as e:
         logger.error("ajustador_juridico_failed", erro=str(e))
@@ -271,8 +305,8 @@ async def node_revisor_linguistico(state: MusicaState) -> MusicaState:
     """
     Nó revisor linguístico - valida formatação e fonética.
     """
-    set_etapa_context(f"revisor_linguistico_c{state['ciclo_atual']}")
     ciclo = state['ciclo_atual']
+    set_etapa_context(f"revisor_linguistico_c{ciclo}")
     
     logger.info("revisor_linguistico_start", ciclo=ciclo, tentativa=state['tentativas_linguistico'])
     
@@ -304,18 +338,28 @@ async def node_revisor_linguistico(state: MusicaState) -> MusicaState:
         
         resposta, usou_fallback = await throttler.call(provider_primario, _call)
         
-        # Parsear e validar
-        resultado_dict = json.loads(resposta.content)
-        resultado = ResultadoRevisao(**resultado_dict)
+        # Parsear e validar JSON com sanitização
+        try:
+            content_limpo = sanitizar_json(resposta.content)
+            resultado_dict = json.loads(content_limpo)
+            resultado = ResultadoRevisao(**resultado_dict)
         
-        # Validar consistência
+        # Validar consistência - NÃO DEVE aprovar se tiver problemas
         if resultado.status == "aprovado" and resultado.problemas:
-            logger.warning("revisor_ling_inconsistente")
+            logger.warning("revisor_ling_inconsistente", msg="Aprovou mas tem problemas - mudando para reprovado")
             resultado.status = "reprovado"
         
+        # Se não tem problemas mas reprovou, aprovar
+        if resultado.status == "reprovado" and not resultado.problemas:
+            logger.warning("revisor_ling_inconsistente", msg="Reprovou mas sem problemas - mudando para aprovado")
+            resultado.status = "aprovado"
+        
         # Atualizar estado
-        state['status_linguistico'] = resultado.status
-        state['problemas_linguisticos'] = resultado.problemas
+        updates = {
+            'status_linguistico': resultado.status,
+            'problemas_linguisticos': resultado.problemas,
+            'etapa_atual': 'decisor_linguistico'
+        }
         
         logger.info(
             "revisor_linguistico_complete",
@@ -324,20 +368,19 @@ async def node_revisor_linguistico(state: MusicaState) -> MusicaState:
             num_problemas=len(resultado.problemas)
         )
         
-        return state
+        return {**state, **updates}
         
     except Exception as e:
         logger.error("revisor_linguistico_failed", erro=str(e))
-        state['status_linguistico'] = 'falha'
-        return state
+        return {**state, 'status_linguistico': 'falha'}
 
 
 async def node_ajustador_linguistico(state: MusicaState) -> MusicaState:
     """
     Nó ajustador linguístico - corrige problemas de formatação/fonética.
     """
-    set_etapa_context(f"ajustador_linguistico_c{state['ciclo_atual']}")
     ciclo = state['ciclo_atual']
+    set_etapa_context(f"ajustador_linguistico_c{ciclo}")
     
     logger.info("ajustador_linguistico_start", ciclo=ciclo, tentativa=state['tentativas_linguistico'])
     
@@ -370,18 +413,23 @@ async def node_ajustador_linguistico(state: MusicaState) -> MusicaState:
         
         resposta, usou_fallback = await throttler.call(provider_primario, _call)
         
-        # Parsear
-        resultado_dict = json.loads(resposta.content)
+        # Parsear JSON com sanitização
+        try:
+            content_limpo = sanitizar_json(resposta.content)
+            resultado_dict = json.loads(content_limpo)
         resultado = ResultadoAjuste(**resultado_dict)
         
         # Atualizar estado
-        state['letra_anterior'] = state['letra_atual']
-        state['letra_atual'] = resultado.letra
-        state['status_linguistico'] = 'pendente'  # Resetar para nova revisão
+        updates = {
+            'letra_anterior': state['letra_atual'],
+            'letra_atual': resultado.letra,
+            'status_linguistico': 'pendente',  # Resetar para nova revisão
+            'etapa_atual': 'incrementador_linguistico'
+        }
         
         logger.info("ajustador_linguistico_complete", ciclo=ciclo)
         
-        return state
+        return {**state, **updates}
         
     except Exception as e:
         logger.error("ajustador_linguistico_failed", erro=str(e))
