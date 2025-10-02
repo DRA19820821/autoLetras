@@ -23,11 +23,12 @@ CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Importar módulos da aplicação
 from backend.app.core.parser import extrair_metadados, gerar_nome_saida
-from backend.app.agents.graph import compilar_workflow
+from backend.app.agents.graph import criar_workflow
 from backend.app.api.schemas import ConfigExecucao
 from backend.app.redis_client import redis_conn, publish_status_update
 from backend.app.utils.logger import get_logger
 from backend.app.retry.throttler import init_throttler
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 # Configuração do Celery
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -91,45 +92,51 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         
         metadados = extrair_metadados(html_path)
 
-        # Compilar o workflow de forma assíncrona
-        workflow = await compilar_workflow(
-            num_ciclos=config.num_ciclos,
-            checkpointer_path=str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
-        )
-
-        config_modelos = {"ciclo_1": config.ciclo_1.dict()}
-        if config.num_ciclos >= 2 and config.ciclo_2:
-            config_modelos["ciclo_2"] = config.ciclo_2.dict()
-        if config.num_ciclos >= 3 and config.ciclo_3:
-            config_modelos["ciclo_3"] = config.ciclo_3.dict()
-
-        initial_state = {
-            "arquivo": arquivo_nome,
-            "tema": metadados.tema,
-            "topico": metadados.topico,
-            "conteudo": metadados.conteudo,
-            "estilo": config.estilo,
-            "ciclo_atual": 1,
-            "etapa_atual": "compositor",
-            "letra_atual": "",
-            "letra_anterior": None,
-            "problemas_juridicos": [],
-            "problemas_linguisticos": [],
-            "tentativas_juridico": 0,
-            "tentativas_linguistico": 0,
-            "status_juridico": "pendente",
-            "status_linguistico": "pendente",
-            "config": config_modelos,
-            "metricas": {"compositor": {}, "custo_total": 0.0}
-        }
+        # 1. Criar a definição do grafo
+        workflow_graph = criar_workflow(num_ciclos=config.num_ciclos)
         
-        thread_id = f"{execucao_id}_{arquivo_nome}"
-        config_exec = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
+        checkpointer_path = str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
 
-        update_status("Processando Workflow", 20, "Iniciando composição...")
-        
-        # Executar o workflow
-        resultado = await workflow.ainvoke(initial_state, config_exec)
+        # 2. Compilar e executar o workflow dentro do contexto do checkpointer
+        async with AsyncSqliteSaver.from_conn_string(checkpointer_path) as checkpointer:
+            
+            logger.info("workflow_compiling", checkpointer=checkpointer_path)
+            workflow = workflow_graph.compile(checkpointer=checkpointer)
+            logger.info("workflow_compiled_successfully")
+
+            config_modelos = {"ciclo_1": config.ciclo_1.dict()}
+            if config.num_ciclos >= 2 and config.ciclo_2:
+                config_modelos["ciclo_2"] = config.ciclo_2.dict()
+            if config.num_ciclos >= 3 and config.ciclo_3:
+                config_modelos["ciclo_3"] = config.ciclo_3.dict()
+
+            initial_state = {
+                "arquivo": arquivo_nome,
+                "tema": metadados.tema,
+                "topico": metadados.topico,
+                "conteudo": metadados.conteudo,
+                "estilo": config.estilo,
+                "ciclo_atual": 1,
+                "etapa_atual": "compositor",
+                "letra_atual": "",
+                "letra_anterior": None,
+                "problemas_juridicos": [],
+                "problemas_linguisticos": [],
+                "tentativas_juridico": 0,
+                "tentativas_linguistico": 0,
+                "status_juridico": "pendente",
+                "status_linguistico": "pendente",
+                "config": config_modelos,
+                "metricas": {"compositor": {}, "custo_total": 0.0}
+            }
+            
+            thread_id = f"{execucao_id}_{arquivo_nome}"
+            config_exec = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
+
+            update_status("Processando Workflow", 20, "Iniciando composição...")
+            
+            # 3. Executar o workflow já compilado
+            resultado = await workflow.ainvoke(initial_state, config_exec)
 
         update_status("Finalizando", 90, "Salvando resultado...")
         output_nome = gerar_nome_saida(html_path, metadados.topico, config.radical, config.id_estilo)
