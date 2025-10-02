@@ -11,17 +11,18 @@ python-multipart==0.0.9
 jinja2==3.1.4
 sse-starlette==2.1.0
 
-# LLM e Agents (Versões Finais e Corretas para Outubro de 2025)
+# LLM e Agents
 langchain==0.3.27
 langchain-anthropic==0.3.21
 langchain-community==0.3.30
 langchain-core==0.3.77
 langchain-google-genai==2.1.5
 langchain-openai==0.3.34
+
+# LangGraph (CORRIGIDO)
 langgraph==0.6.8
-# CORREÇÃO DEFINITIVA: Adicionando o pacote que faltava
-langgraph-checkpoint-sqlite>=2.0
 langgraph-checkpoint==2.1.1
+langgraph-checkpoint-sqlite==2.0.4
 
 # Retry e Circuit Breaker
 tenacity==8.5.0
@@ -37,7 +38,7 @@ structlog==25.2.0
 # Database (checkpoint e task broker)
 aiosqlite==0.20.0
 redis==5.2.0
-celery[gevent,redis]==5.5.3
+celery==5.5.3
 
 # Utils
 httpx==0.27.0

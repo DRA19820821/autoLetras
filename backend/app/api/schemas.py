@@ -1,6 +1,6 @@
 """Schemas Pydantic para API."""
 from datetime import datetime
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Any, TypedDict
 from pydantic import BaseModel, Field
 
 # --- Configuração da Execução ---
@@ -75,3 +75,43 @@ class ResultadoRevisao(BaseModel):
 class LetraAjustada(BaseModel):
     """Schema para a letra ajustada após uma revisão."""
     letra: str = Field(description="A versão completa e corrigida da letra da música, aplicando as correções necessárias.")
+
+# --- Estado do Workflow (TypedDict para LangGraph) ---
+
+class MusicaState(TypedDict, total=False):
+    """
+    Estado do workflow de composição musical.
+    TypedDict usado pelo LangGraph para gerenciar o estado.
+    """
+    # Metadados do arquivo
+    arquivo: str
+    tema: str
+    topico: str
+    conteudo: str
+    estilo: str
+    
+    # Controle de fluxo
+    ciclo_atual: int
+    etapa_atual: str
+    
+    # Letras
+    letra_atual: str
+    letra_anterior: Optional[str]
+    
+    # Status de revisão
+    status_juridico: str
+    status_linguistico: str
+    
+    # Problemas identificados
+    problemas_juridicos: List[str]
+    problemas_linguisticos: List[str]
+    
+    # Tentativas de ajuste
+    tentativas_juridico: int
+    tentativas_linguistico: int
+    
+    # Configuração dos modelos
+    config: Dict[str, Any]
+    
+    # Métricas e custos
+    metricas: Dict[str, Any]
