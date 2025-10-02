@@ -3,24 +3,20 @@ from datetime import datetime
 from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
+# --- Configuração da Execução ---
 
 class ModeloConfig(BaseModel):
-    """Configuração de modelo primário e fallback."""
     primario: str
     fallback: str
 
-
 class ConfigCiclo(BaseModel):
-    """Configuração de modelos para um ciclo."""
     compositor: ModeloConfig
     revisor_juridico: ModeloConfig
     ajustador_juridico: ModeloConfig
     revisor_linguistico: ModeloConfig
     ajustador_linguistico: ModeloConfig
 
-
 class ConfigExecucao(BaseModel):
-    """Configuração completa de uma execução."""
     estilo: str = Field(..., description="Descrição do estilo musical")
     id_estilo: str = Field(..., min_length=2, max_length=3, description="ID do estilo (2-3 letras)")
     radical: str = Field(..., description="Radical para nome dos arquivos")
@@ -29,9 +25,13 @@ class ConfigExecucao(BaseModel):
     ciclo_2: Optional[ConfigCiclo] = None
     ciclo_3: Optional[ConfigCiclo] = None
 
+class IniciarExecucaoRequest(BaseModel):
+    arquivos: List[str]
+    config: ConfigExecucao
+
+# --- Validação e Status ---
 
 class ArquivoValidacao(BaseModel):
-    """Resultado de validação de um arquivo."""
     arquivo: str
     valido: bool
     tema: Optional[str] = None
@@ -39,15 +39,7 @@ class ArquivoValidacao(BaseModel):
     avisos: List[str] = []
     erro: Optional[str] = None
 
-
-class IniciarExecucaoRequest(BaseModel):
-    """Request para iniciar processamento."""
-    arquivos: List[str] = Field(..., description="Lista de nomes de arquivos HTML")
-    config: ConfigExecucao
-
-
 class StatusArquivo(BaseModel):
-    """Status de processamento de um arquivo."""
     arquivo: str
     status: Literal["aguardando", "processando", "concluido", "falha"]
     ciclo_atual: Optional[int] = None
@@ -56,72 +48,30 @@ class StatusArquivo(BaseModel):
     output_gerado: Optional[str] = None
     erro: Optional[str] = None
 
-
 class ExecucaoStatus(BaseModel):
-    """Status completo de uma execução."""
     execucao_id: str
     status: Literal["inicializando", "processando", "concluido", "cancelado", "erro"]
     timestamp_inicio: datetime
     timestamp_fim: Optional[datetime] = None
     duracao_segundos: Optional[int] = None
-    
     arquivos: List[StatusArquivo]
-    
-    # Estatísticas
     total_arquivos: int
     arquivos_concluidos: int
     arquivos_em_processo: int
     arquivos_falhados: int
-    
-    # Métricas
     custo_total: float = 0.0
-    total_chamadas: int = 0
-    chamadas_com_retry: int = 0
-    chamadas_com_fallback: int = 0
 
+# --- Saída Estruturada para LLMs (Function Calling) ---
 
-class LogEntry(BaseModel):
-    """Entrada de log."""
-    timestamp: datetime
-    nivel: str
-    arquivo: Optional[str] = None
-    ciclo: Optional[int] = None
-    etapa: Optional[str] = None
-    mensagem: str
-    detalhes: Optional[Dict] = None
+class LetraMusical(BaseModel):
+    """Schema para a letra da música gerada pelo compositor."""
+    letra: str = Field(description="O texto completo da letra da música, incluindo um título criativo e as menções à 'Academia do Raciocínio'.")
 
+class ResultadoRevisao(BaseModel):
+    """Schema para o resultado da revisão (jurídica ou linguística)."""
+    status: Literal["aprovado", "reprovado"] = Field(description="O status da revisão. 'aprovado' se a letra está perfeita, 'reprovado' se necessita de ajustes.")
+    problemas: List[str] = Field(description="Uma lista detalhada dos problemas encontrados. Se 'status' for 'aprovado', esta lista deve estar vazia.")
 
-class MetricasProvedor(BaseModel):
-    """Métricas de uso de um provedor."""
-    total_chamadas: int
-    primeira_tentativa_ok: int
-    com_retry: int
-    com_fallback: int
-    custo_total: float
-    taxa_sucesso: float
-
-
-class SummaryResponse(BaseModel):
-    """Resumo final de uma execução."""
-    execucao_id: str
-    timestamp_inicio: datetime
-    timestamp_fim: datetime
-    duracao_total: str
-    
-    resultados: Dict[str, int]  # {"sucesso_completo": 8, ...}
-    
-    custos: Dict[str, float]
-    tokens: Dict[str, int]
-    
-    estatisticas_retry: Dict[str, int]
-    metricas_por_provedor: Dict[str, MetricasProvedor]
-    
-    avisos: List[str]
-    detalhes_arquivos: List[Dict]
-
-
-class ProvedorStatus(BaseModel):
-    """Status de disponibilidade de um provedor."""
-    provedor: str
-    disponivel: bool
-    mensagem: Optional[str] = None
+class LetraAjustada(BaseModel):
+    """Schema para a letra ajustada após uma revisão."""
+    letra: str = Field(description="A versão completa e corrigida da letra da música, aplicando as correções necessárias.")

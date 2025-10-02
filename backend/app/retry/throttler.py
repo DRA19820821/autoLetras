@@ -4,7 +4,8 @@ import time
 from typing import Dict, Callable, Any
 from collections import defaultdict, deque
 
-from app.utils.logger import get_logger
+# CORREÇÃO: O import foi ajustado para usar o caminho absoluto a partir da raiz do projeto.
+from backend.app.utils.logger import get_logger
 
 logger = get_logger()
 
