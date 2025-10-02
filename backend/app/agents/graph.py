@@ -1,8 +1,8 @@
-"""Definição do grafo LangGraph para processamento de letras - VERSÃO FINAL."""
+"""Definição do grafo LangGraph para processamento de letras."""
 from langgraph.graph import StateGraph, START, END
-# A CAUSA RAIZ DO ERRO: SqliteSaver está no pacote langgraph-checkpoint, não em langgraph.
 from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import Dict
+import sqlite3
 
 from backend.app.agents.nodes import MusicaState, node_compositor, node_revisor_juridico, node_ajustador_juridico, node_revisor_linguistico, node_ajustador_linguistico
 from backend.app.utils.logger import get_logger
@@ -13,7 +13,7 @@ MAX_TENTATIVAS_REVISAO = 5
 
 def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     """
-    Cria o workflow completo de composição com N ciclos, usando uma lógica de roteamento robusta.
+    Cria o workflow completo de composição com N ciclos.
     """
     workflow = StateGraph(MusicaState)
 
@@ -32,8 +32,8 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     for ciclo in range(1, num_ciclos + 1):
         # Fluxo Padrão
         workflow.add_edge(f"compositor_c{ciclo}", f"revisor_jur_c{ciclo}")
-        workflow.add_edge(f"ajustador_jur_c{ciclo}", f"revisor_jur_c{ciclo}") # O ajustador sempre devolve para o revisor
-        workflow.add_edge(f"ajustador_ling_c{ciclo}", f"revisor_ling_c{ciclo}") # O ajustador sempre devolve para o revisor
+        workflow.add_edge(f"ajustador_jur_c{ciclo}", f"revisor_jur_c{ciclo}")
+        workflow.add_edge(f"ajustador_ling_c{ciclo}", f"revisor_ling_c{ciclo}")
 
         # Roteador após a revisão jurídica
         def router_juridico(state: Dict) -> str:
@@ -67,8 +67,12 @@ def compilar_workflow(
     workflow = criar_workflow(num_ciclos)
     
     try:
-        # A instanciação do checkpointer está correta com o import corrigido.
-        memory = SqliteSaver.from_conn_string(checkpointer_path)
+        # Criar conexão SQLite
+        conn = sqlite3.connect(checkpointer_path, check_same_thread=False)
+        
+        # Criar checkpointer usando a conexão
+        memory = SqliteSaver(conn)
+        
         app = workflow.compile(checkpointer=memory)
         logger.info("workflow_compiled_successfully", num_ciclos=num_ciclos, checkpointer=checkpointer_path)
         return app
