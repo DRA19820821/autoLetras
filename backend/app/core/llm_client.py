@@ -1,55 +1,197 @@
-"""Cliente unificado para LLMs usando LangChain ChatModels."""
+# backend/app/core/llm_client.py
+"""
+Fábrica de modelos de chat (LLM) para o projeto.
+
+- Suporte a provedores OpenAI-compatible:
+  * DeepSeek (recomendado neste projeto)  -> LLM_PROVIDER=deepseek
+  * OpenAI                                -> LLM_PROVIDER=openai
+  * Genérico OpenAI-compatible            -> LLM_PROVIDER=generic
+
+Como usar no docker-compose (.env):
+  LLM_PROVIDER=deepseek
+  DEEPSEEK_API_KEY=sk-xxxx
+  # opcional:
+  DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+  DEEPSEEK_MODEL=deepseek-chat  # ou deepseek-reasoner
+
+Parâmetros globais opcionais:
+  LLM_TEMPERATURE=0.2
+  LLM_TIMEOUT=120
+  LLM_MAX_RETRIES=3
+
+Para OPENAI:
+  LLM_PROVIDER=openai
+  OPENAI_API_KEY=sk-xxxx
+  # opcional: OPENAI_BASE_URL (se for um proxy)
+
+Para genérico:
+  LLM_PROVIDER=generic
+  GENERIC_OPENAI_API_KEY=sk-xxxx
+  GENERIC_OPENAI_BASE_URL=https://host:port/v1
+  GENERIC_OPENAI_MODEL=algum-modelo
+"""
+
+from __future__ import annotations
+
 import os
 from functools import lru_cache
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.chat_models.deepseek import ChatDeepseek
+from typing import Optional, Dict, Any
 
-# Mapeamento de nomes amigáveis para nomes de modelos oficiais e provedores
-MODEL_MAP = {
-    # OpenAI
-    "gpt-4o": ("gpt-4o", "openai"), "gpt-4-turbo": ("gpt-4-turbo", "openai"),
-    # Anthropic
-    "claude-3-5-sonnet": ("claude-3-5-sonnet-20240620", "anthropic"),
-    "claude-3-opus": ("claude-3-opus-20240229", "anthropic"),
-    "claude-sonnet-4-5": ("claude-3-5-sonnet-20240620", "anthropic"), # Mapeando para o mais próximo disponível
-    # Google
-    "gemini-1.5-pro": ("gemini-1.5-pro-latest", "google"),
-    "gemini-pro": ("gemini-pro", "google"),
-    # DeepSeek
-    "deepseek-chat": ("deepseek-chat", "deepseek"),
-}
+from langchain_openai import ChatOpenAI  # pip install langchain-openai
 
-@lru_cache(maxsize=10)
-def get_chat_model(model_name: str, temperature: float = 0.7):
+
+def _env_float(name: str, default: float) -> float:
+    val = os.getenv(name, "")
+    if not val:
+        return default
+    try:
+        return float(val)
+    except ValueError:
+        return default
+
+
+def _env_int(name: str, default: int) -> int:
+    val = os.getenv(name, "")
+    if not val:
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        return default
+
+
+def _build_chat_openai(
+    *,
+    model: str,
+    api_key: str,
+    base_url: Optional[str],
+    temperature: float,
+    timeout: int,
+    max_retries: int,
+    extra_kwargs: Optional[Dict[str, Any]] = None,
+) -> ChatOpenAI:
     """
-    Retorna uma instância de ChatModel da LangChain para o modelo especificado.
-    Usa um cache para evitar recriar o mesmo objeto.
+    Constrói um ChatOpenAI com parâmetros padronizados.
     """
-    friendly_name = model_name.lower()
-    
-    # Procura um mapeamento que seja um subconjunto do nome amigável
-    api_name, provider = None, None
-    for key, value in MODEL_MAP.items():
-        if key in friendly_name:
-            api_name, provider = value
-            break
-            
-    if not (api_name and provider):
-        raise ValueError(f"Modelo '{model_name}' não é suportado ou mapeado.")
+    kwargs: Dict[str, Any] = {
+        "model": model,
+        "api_key": api_key,
+        "temperature": temperature,
+        "timeout": timeout,
+        "max_retries": max_retries,
+    }
+    # base_url só é passado se definido (OpenAI oficial não precisa)
+    if base_url:
+        kwargs["base_url"] = base_url
 
-    if provider == "openai":
-        model = ChatOpenAI(model=api_name, temperature=temperature, api_key=os.getenv("OPENAI_API_KEY"))
-    elif provider == "anthropic":
-        model = ChatAnthropic(model=api_name, temperature=temperature, api_key=os.getenv("ANTHROPIC_API_KEY"))
-    elif provider == "google":
-        model = ChatGoogleGenerativeAI(model=api_name, temperature=temperature, api_key=os.getenv("GOOGLE_API_KEY"), convert_system_message_to_human=True)
-    elif provider == "deepseek":
-         model = ChatDeepseek(model=api_name, temperature=temperature, api_key=os.getenv("DEEPSEEK_API_KEY"))
+    if extra_kwargs:
+        kwargs.update(extra_kwargs)
+
+    return ChatOpenAI(**kwargs)
+
+
+@lru_cache(maxsize=16)
+def get_chat_model(model: Optional[str] = None, temperature: Optional[float] = None) -> ChatOpenAI:
+    """
+    Retorna uma instância cacheada de ChatOpenAI conforme o provedor escolhido via envs.
+
+    Args:
+        model: nome do modelo (opcional). Se None, usa o default do provedor.
+        temperature: temperatura (opcional). Se None, usa LLM_TEMPERATURE ou 0.2.
+
+    Returns:
+        ChatOpenAI
+    """
+    provider = os.getenv("LLM_PROVIDER", "deepseek").strip().lower()
+
+    # Parâmetros globais
+    temp = temperature if (temperature is not None) else _env_float("LLM_TEMPERATURE", 0.2)
+    timeout = _env_int("LLM_TIMEOUT", 120)
+    max_retries = _env_int("LLM_MAX_RETRIES", 3)
+
+    if provider == "deepseek":
+        # DeepSeek via endpoint OpenAI-compatible
+        api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        if not api_key:
+            raise RuntimeError("Faltou DEEPSEEK_API_KEY no ambiente (LLM_PROVIDER=deepseek).")
+
+        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").strip() or None
+        mdl = model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
+
+        return _build_chat_openai(
+            model=mdl,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temp,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    elif provider == "openai":
+        # OpenAI oficial
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key:
+            raise RuntimeError("Faltou OPENAI_API_KEY no ambiente (LLM_PROVIDER=openai).")
+
+        base_url = os.getenv("OPENAI_BASE_URL", "").strip() or None  # normalmente não precisa
+        # Ex.: "gpt-4o-mini", "gpt-4.1", etc. Ajuste conforme seu uso.
+        mdl = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+
+        return _build_chat_openai(
+            model=mdl,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temp,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    elif provider == "generic":
+        # Qualquer provedor compatível com OpenAI
+        api_key = os.getenv("GENERIC_OPENAI_API_KEY", "").strip()
+        base_url = os.getenv("GENERIC_OPENAI_BASE_URL", "").strip()
+        if not api_key or not base_url:
+            raise RuntimeError(
+                "Para LLM_PROVIDER=generic, defina GENERIC_OPENAI_API_KEY e GENERIC_OPENAI_BASE_URL."
+            )
+
+        mdl = model or os.getenv("GENERIC_OPENAI_MODEL", "unknown-model").strip() or "unknown-model"
+
+        return _build_chat_openai(
+            model=mdl,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temp,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
     else:
-        raise ValueError(f"Provedor '{provider}' desconhecido.")
-        
-    # Adicionar o provedor ao objeto para uso no throttler
-    model.provider = provider
-    return model
+        raise RuntimeError(
+            f"LLM_PROVIDER inválido: {provider!r}. Use 'deepseek', 'openai' ou 'generic'."
+        )
+
+
+# ---------- Utilitários opcionais ----------
+
+def get_provider_model_name() -> str:
+    """
+    Retorna uma string 'provider:model' útil para logs/diagnóstico.
+    """
+    provider = os.getenv("LLM_PROVIDER", "deepseek").strip().lower()
+    if provider == "deepseek":
+        mdl = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
+    elif provider == "openai":
+        mdl = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+    elif provider == "generic":
+        mdl = os.getenv("GENERIC_OPENAI_MODEL", "unknown-model").strip() or "unknown-model"
+    else:
+        mdl = "unknown"
+    return f"{provider}:{mdl}"
+
+
+if __name__ == "__main__":
+    # Teste rápido (não faz chamada externa).
+    # Apenas constrói a instância e imprime um resumo.
+    llm = get_chat_model()
+    print("LLM pronto:", get_provider_model_name(), "->", type(llm).__name__)
