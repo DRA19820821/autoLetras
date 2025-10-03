@@ -1,273 +1,153 @@
-"""
-Fábrica de modelos de chat com suporte a múltiplos provedores.
-VERSÃO CORRIGIDA: Detecta o provedor correto baseado no nome do modelo.
+"""Camada de abstração de modelos de linguagem para a aplicação AutoLetras.
+
+Este módulo oferece funções utilitárias para instanciar modelos de linguagem
+compartilhados de forma agnóstica ao provedor, bem como detectar o provedor
+correto a partir do nome do modelo. Ele também injeta um atributo `provider`
+nas instâncias retornadas, contornando restrições impostas por algumas
+bibliotecas que não expõem essa informação por padrão. Esse atributo é
+utilizado por outras partes da aplicação (por exemplo, o `throttler`) para
+gerenciar limites de chamadas por provedor.
+
+Se novos modelos ou provedores forem adicionados, atualize a função
+`_detect_provider_from_model` e a lógica de criação em `get_chat_model`.
 """
 
 from __future__ import annotations
 
 import os
-from functools import lru_cache
-from typing import Optional, Dict, Any, Union
+from typing import Optional
 
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
+# Importações condicionais para evitar erros caso algumas bibliotecas não
+# estejam instaladas no ambiente. Cada import é envolvido em um bloco try
+# individual para permitir o uso parcial caso apenas alguns provedores
+# estejam disponíveis.
+try:
+    from langchain_openai import ChatOpenAI  # type: ignore
+except Exception:
+    ChatOpenAI = None  # type: ignore
 
+try:
+    from langchain_anthropic import ChatAnthropic  # type: ignore
+except Exception:
+    ChatAnthropic = None  # type: ignore
 
-def _env_float(name: str, default: float) -> float:
-    val = os.getenv(name, "")
-    if not val:
-        return default
-    try:
-        return float(val)
-    except ValueError:
-        return default
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI  # type: ignore
+except Exception:
+    ChatGoogleGenerativeAI = None  # type: ignore
 
-
-def _env_int(name: str, default: int) -> int:
-    val = os.getenv(name, "")
-    if not val:
-        return default
-    try:
-        return int(val)
-    except ValueError:
-        return default
+# Deepseek e outros provedores podem ser suportados conforme necessário.
 
 
 def _detect_provider_from_model(model_name: str) -> str:
-    """
-    Detecta o provedor baseado no nome do modelo.
-    
+    """Detecta o provedor com base no nome do modelo.
+
+    A heurística é simples:
+
+    - Nomes iniciados por "claude" → Anthropic.
+    - Nomes iniciados por "gemini" → Google Generative AI.
+    - Nomes iniciados por "gpt" → OpenAI.
+    - Se contiver "deepseek" → DeepSeek.
+    - Caso contrário, usa a variável de ambiente ``LLM_PROVIDER`` como
+      valor padrão; se não definida, assume OpenAI.
+
     Args:
-        model_name: Nome do modelo (ex: "claude-sonnet-4-5", "gpt-5", "gemini-2.5-pro", "deepseek-reasoner")
-        
+        model_name: Nome do modelo a ser inferido.
+
     Returns:
-        Nome do provedor: "anthropic", "openai", "google", "deepseek", ou "generic"
+        Nome do provedor reconhecido.
     """
-    model_lower = model_name.lower()
-    
-    # Claude models
-    if model_lower.startswith("claude"):
+    prefix = model_name.lower()
+    if prefix.startswith("claude"):
         return "anthropic"
-    
-    # Gemini models
-    if model_lower.startswith("gemini"):
+    if prefix.startswith("gemini"):
         return "google"
-    
-    # GPT models
-    if model_lower.startswith("gpt"):
+    if prefix.startswith("gpt"):
         return "openai"
-    
-    # DeepSeek models (inclui deepseek-chat e deepseek-reasoner)
-    if "deepseek" in model_lower:
+    if "deepseek" in prefix:
         return "deepseek"
-    
-    # Padrão: usar o LLM_PROVIDER do .env
-    return os.getenv("LLM_PROVIDER", "openai").strip().lower()
+    return os.getenv("LLM_PROVIDER", "openai").lower()
 
 
-@lru_cache(maxsize=16)
-def get_chat_model(
-    model: Optional[str] = None,
-    temperature: Optional[float] = None
-) -> Union[ChatOpenAI, ChatAnthropic, ChatGoogleGenerativeAI]:
-    """
-    Retorna uma instância de chat model do provedor apropriado.
-    DETECTA AUTOMATICAMENTE o provedor baseado no nome do modelo.
-    
+def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> object:
+    """Instancia um modelo de chat conforme o provedor detectado.
+
+    Além de retornar a instância, injeta dinamicamente um atributo
+    ``provider`` na instância para compatibilidade com código que
+    referencia essa informação. Caso um provedor não esteja instalado,
+    lança uma ``ValueError`` explicitando o erro.
+
     Args:
-        model: Nome do modelo (ex: "claude-sonnet-4-5", "gpt-4o", "gemini-2.5-pro")
-        temperature: Temperatura (opcional)
-        
+        model_name: Identificador do modelo. Por exemplo ``"gpt-4"`` ou
+            ``"claude-2"``. Usado para inferir o provedor e para ser
+            passado ao construtor do modelo.
+        temperature: Temperatura a ser passada ao modelo, quando aplicável.
+        **kwargs: Parâmetros adicionais específicos do provedor.
+
     Returns:
-        Instância do chat model apropriado
-        
-    Examples:
-        >>> llm = get_chat_model("claude-sonnet-4-5")  # Retorna ChatAnthropic
-        >>> llm = get_chat_model("gpt-4o")              # Retorna ChatOpenAI
-        >>> llm = get_chat_model("gemini-2.5-pro")      # Retorna ChatGoogleGenerativeAI
+        Instância da classe de modelo apropriada, com o atributo ``provider``
+        definido.
     """
-    # Parâmetros globais
-    temp = temperature if (temperature is not None) else _env_float("LLM_TEMPERATURE", 0.2)
-    timeout = _env_int("LLM_TIMEOUT", 120)
-    max_retries = _env_int("LLM_MAX_RETRIES", 3)
-    
-    # Se não foi passado modelo, usar o padrão do .env
-    if not model:
-        default_provider = os.getenv("LLM_PROVIDER", "deepseek").strip().lower()
-        
-        if default_provider == "anthropic":
-            model = "claude-sonnet-4-5"
-        elif default_provider == "openai":
-            model = "gpt-4o"
-        elif default_provider == "google":
-            model = "gemini-2.5-pro"
-        elif default_provider == "deepseek":
-            model = "deepseek-chat"
-        else:
-            model = os.getenv("GENERIC_OPENAI_MODEL", "gpt-4o").strip()
-    
-    # Detectar provedor baseado no nome do modelo
-    provider = _detect_provider_from_model(model)
-    
-    # ANTHROPIC (Claude)
-    if provider == "anthropic":
-        api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError(
-                f"Modelo '{model}' requer ANTHROPIC_API_KEY, mas não foi encontrada no .env"
-            )
-        
-        llm = ChatAnthropic(
-            model=model,
-            anthropic_api_key=api_key,
-            temperature=temp,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        
-        # Adicionar atributo para throttler
-        llm.provider = "anthropic"
-        
-        return llm
-    
-    # GOOGLE (Gemini)
-    elif provider == "google":
-        api_key = os.getenv("GOOGLE_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError(
-                f"Modelo '{model}' requer GOOGLE_API_KEY, mas não foi encontrada no .env"
-            )
-        
-        llm = ChatGoogleGenerativeAI(
-            model=model,
-            google_api_key=api_key,
-            temperature=temp,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        
-        # Adicionar atributo para throttler
-        llm.provider = "google"
-        
-        return llm
-    
-    # OPENAI (GPT)
-    elif provider == "openai":
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError(
-                f"Modelo '{model}' requer OPENAI_API_KEY, mas não foi encontrada no .env"
-            )
-        
-        base_url = os.getenv("OPENAI_BASE_URL", "").strip() or None
-        
-        llm = ChatOpenAI(
-            model=model,
-            api_key=api_key,
-            temperature=temp,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        
-        # Adicionar atributo para identificar o provedor
-        llm.provider = "openai"
-        
-        if base_url:
-            llm.base_url = base_url
-        
-        return llm
-    
-    # DEEPSEEK (API compatível com OpenAI)
-    elif provider == "deepseek":
-        api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
-        if not api_key:
-            raise RuntimeError(
-                f"Modelo '{model}' requer DEEPSEEK_API_KEY, mas não foi encontrada no .env"
-            )
-        
-        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1").strip()
-        
-        llm = ChatOpenAI(
-            model=model,
-            api_key=api_key,
-            base_url=base_url,
-            temperature=temp,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        
-        # Adicionar atributo para identificar o provedor
-        llm.provider = "deepseek"
-        
-        return llm
-    
-    # GENERIC (qualquer API compatível com OpenAI)
-    else:
-        api_key = os.getenv("GENERIC_OPENAI_API_KEY", "").strip()
-        base_url = os.getenv("GENERIC_OPENAI_BASE_URL", "").strip()
-        
-        if not api_key or not base_url:
-            raise RuntimeError(
-                f"Modelo '{model}' requer GENERIC_OPENAI_API_KEY e GENERIC_OPENAI_BASE_URL no .env"
-            )
-        
-        llm = ChatOpenAI(
-            model=model,
-            api_key=api_key,
-            base_url=base_url,
-            temperature=temp,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        
-        # Adicionar atributo para identificar o provedor
-        llm.provider = "generic"
-        
-        return llm
+    provider = _detect_provider_from_model(model_name)
 
-
-def get_provider_model_name() -> str:
-    """
-    Retorna string 'provider:model' para logs.
-    """
-    provider = os.getenv("LLM_PROVIDER", "deepseek").strip().lower()
-    
-    if provider == "deepseek":
-        mdl = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
-    elif provider == "openai":
-        mdl = os.getenv("OPENAI_MODEL", "gpt-4o").strip() or "gpt-4o"
+    # Instanciar o modelo conforme o provedor.
+    # Adicionamos parâmetros de limite de tokens quando não fornecidos,
+    # pois alguns modelos têm valores padrão muito baixos que podem
+    # truncar saídas estruturadas. Ajustar esse limite ajuda a evitar
+    # erros como "max_tokens" stop reason, que causam validações
+    # incompletas em Pydantic.
+    if provider == "openai":
+        if ChatOpenAI is None:
+            raise ValueError(
+                "Biblioteca langchain_openai não está instalada."
+            )
+        # OpenAI usa `max_tokens` para limitar a resposta. Se não
+        # especificado pelo usuário, definimos um valor alto para
+        # permitir que respostas estruturadas sejam completas.
+        if "max_tokens" not in kwargs:
+            kwargs["max_tokens"] = 12000
+        llm = ChatOpenAI(model=model_name, temperature=temperature, **kwargs)
     elif provider == "anthropic":
-        mdl = "claude-sonnet-4-5"
+        if ChatAnthropic is None:
+            raise ValueError(
+                "Biblioteca langchain_anthropic não está instalada."
+            )
+        # Anthropic usa `max_tokens_to_sample` (alias `max_tokens`).
+        if "max_tokens_to_sample" not in kwargs and "max_tokens" not in kwargs:
+            kwargs["max_tokens_to_sample"] = 12000
+        llm = ChatAnthropic(model=model_name, temperature=temperature, **kwargs)
     elif provider == "google":
-        mdl = "gemini-2.5-pro"
-    elif provider == "generic":
-        mdl = os.getenv("GENERIC_OPENAI_MODEL", "unknown-model").strip() or "unknown-model"
+        if ChatGoogleGenerativeAI is None:
+            raise ValueError(
+                "Biblioteca langchain_google_genai não está instalada."
+            )
+        # Google usa `max_output_tokens` para limitar a saída.
+        if "max_output_tokens" not in kwargs:
+            kwargs["max_output_tokens"] = 12000
+        # Para Google Generative AI, o parâmetro de temperatura possui nome
+        # diferente. Fornecemos via kwargs caso esteja disponível.
+        llm = ChatGoogleGenerativeAI(model=model_name, temperature=temperature, **kwargs)
     else:
-        mdl = "unknown"
-    
-    return f"{provider}:{mdl}"
+        raise ValueError(f"Provedor de LLM '{provider}' não suportado.")
+
+    # Injeta dinamicamente o atributo provider. Usamos setattr para
+    # contornar casos em que as classes não permitem novas atribuições.
+    try:
+        setattr(llm, "provider", provider)
+    except Exception:
+        # Caso o objeto seja imutável (p.ex. Pydantic), encapsulamos em
+        # um objeto simples que expõe a interface e o atributo extra.
+        class ModelWrapper:
+            def __init__(self, base, prov):
+                self._base = base
+                self.provider = prov
+
+            def __getattr__(self, name):
+                return getattr(self._base, name)
+
+        llm = ModelWrapper(llm, provider)
+
+    return llm
 
 
-if __name__ == "__main__":
-    # Teste rápido
-    print("Testando detecção de provedores:")
-    print()
-    
-    test_models = [
-        "claude-sonnet-4-5",
-        "claude-opus-4-1",
-        "gpt-5",
-        "gpt-4o",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",
-        "deepseek-chat",
-        "deepseek-reasoner",
-    ]
-    
-    for model in test_models:
-        provider = _detect_provider_from_model(model)
-        print(f"  {model:30s} -> {provider}")
-    
-    print()
-    print("Provedor padrão:", get_provider_model_name())
+__all__ = ["get_chat_model", "_detect_provider_from_model"]
