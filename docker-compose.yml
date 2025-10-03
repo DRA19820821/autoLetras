@@ -46,7 +46,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    command: celery -A backend.celery_worker:celery_app worker --loglevel=info --pool=solo
+    command: celery -A backend.celery_worker:celery_app worker --loglevel=info --pool=threads --concurrency=3
 
 volumes:
   redis_data:

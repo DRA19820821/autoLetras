@@ -69,7 +69,7 @@ class LetraMusical(BaseModel):
 
 class ResultadoRevisao(BaseModel):
     """Schema para o resultado da revisão (jurídica ou linguística)."""
-    status: Literal["aprovado", "reprovado"] = Field(description="O status da revisão. 'aprovado' se a letra está perfeita, 'reprovado' se necessita de ajustes.")
+    status: Literal["aprovado", "reprovado"] = Field(description="O status da revisão. 'aprovado' se a letra está correta, 'reprovado' se necessita de ajustes.")
     problemas: List[str] = Field(description="Uma lista detalhada dos problemas encontrados. Se 'status' for 'aprovado', esta lista deve estar vazia.")
 
 class LetraAjustada(BaseModel):

@@ -171,6 +171,17 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             
             # Extrair LLMs usados neste ciclo
             llms_ciclo = state.get('llms_usados', {}).get(f'ciclo_{ciclo}', [])
+            letra_atual = state.get('letra_atual', '')
+            
+            # Logging de debug
+            logger.info(
+                "salvando_ciclo",
+                ciclo=ciclo,
+                arquivo=output_nome,
+                tem_letra=bool(letra_atual),
+                tamanho_letra=len(letra_atual),
+                num_llms=len(llms_ciclo)
+            )
             
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump({
@@ -187,7 +198,7 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                         "tentativas_juridico": state.get("tentativas_juridico", 0),
                         "tentativas_linguistico": state.get("tentativas_linguistico", 0),
                     },
-                    "letra": state.get('letra_atual', ''),
+                    "letra": letra_atual,
                     "llms_usados": llms_ciclo,
                     "metricas": state.get("metricas", {}),
                 }, f, ensure_ascii=False, indent=2)
