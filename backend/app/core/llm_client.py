@@ -36,6 +36,13 @@ try:
 except Exception:
     ChatGoogleGenerativeAI = None  # type: ignore
 
+try:
+    # O pacote `langchain_deepseek` fornece integração com DeepSeek.
+    # Ver https://python.langchain.com/api_reference/deepseek/chat_models/langchain_deepseek.chat_models.ChatDeepSeek.html
+    from langchain_deepseek import ChatDeepSeek  # type: ignore
+except Exception:
+    ChatDeepSeek = None  # type: ignore
+
 # Deepseek e outros provedores podem ser suportados conforme necessário.
 
 
@@ -105,7 +112,7 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
         # especificado pelo usuário, definimos um valor alto para
         # permitir que respostas estruturadas sejam completas.
         if "max_tokens" not in kwargs:
-            kwargs["max_tokens"] = 12000
+            kwargs["max_tokens"] = 2048
         llm = ChatOpenAI(model=model_name, temperature=temperature, **kwargs)
     elif provider == "anthropic":
         if ChatAnthropic is None:
@@ -114,7 +121,7 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
             )
         # Anthropic usa `max_tokens_to_sample` (alias `max_tokens`).
         if "max_tokens_to_sample" not in kwargs and "max_tokens" not in kwargs:
-            kwargs["max_tokens_to_sample"] = 12000
+            kwargs["max_tokens_to_sample"] = 2048
         llm = ChatAnthropic(model=model_name, temperature=temperature, **kwargs)
     elif provider == "google":
         if ChatGoogleGenerativeAI is None:
@@ -123,10 +130,21 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
             )
         # Google usa `max_output_tokens` para limitar a saída.
         if "max_output_tokens" not in kwargs:
-            kwargs["max_output_tokens"] = 12000
+            kwargs["max_output_tokens"] = 2048
         # Para Google Generative AI, o parâmetro de temperatura possui nome
         # diferente. Fornecemos via kwargs caso esteja disponível.
         llm = ChatGoogleGenerativeAI(model=model_name, temperature=temperature, **kwargs)
+    elif provider == "deepseek":
+        # Suporte para DeepSeek. Necessita do pacote `langchain_deepseek` instalado
+        # e da variável de ambiente DEEPSEEK_API_KEY. A classe ChatDeepSeek aceita
+        # `max_tokens` como parâmetro de tamanho de resposta.
+        if ChatDeepSeek is None:
+            raise ValueError(
+                "Biblioteca langchain_deepseek não está instalada."
+            )
+        if "max_tokens" not in kwargs:
+            kwargs["max_tokens"] = 2048
+        llm = ChatDeepSeek(model=model_name, temperature=temperature, **kwargs)
     else:
         raise ValueError(f"Provedor de LLM '{provider}' não suportado.")
 
