@@ -112,7 +112,10 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
         # especificado pelo usuário, definimos um valor alto para
         # permitir que respostas estruturadas sejam completas.
         if "max_tokens" not in kwargs:
-            kwargs["max_tokens"] = 2048
+            # Para modelos OpenAI é seguro usar um valor elevado (p.ex. 4096)
+            # para permitir respostas longas sem cortar prematuramente. Esse
+            # valor ainda está abaixo do limite de muitas variantes modernas.
+            kwargs["max_tokens"] = 12000
         llm = ChatOpenAI(model=model_name, temperature=temperature, **kwargs)
     elif provider == "anthropic":
         if ChatAnthropic is None:
@@ -120,8 +123,11 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
                 "Biblioteca langchain_anthropic não está instalada."
             )
         # Anthropic usa `max_tokens_to_sample` (alias `max_tokens`).
-        if "max_tokens_to_sample" not in kwargs and "max_tokens" not in kwargs:
-            kwargs["max_tokens_to_sample"] = 2048
+        if "max_tokens" not in kwargs:
+            # Claude Sonnet 4.5 e Opus 4.1 suportam saídas muito longas (até
+            # dezenas de milhares de tokens). Definimos 8192 como valor
+            # padrão para minimizar riscos de truncamento.
+            kwargs["max_tokens"] = 12000
         llm = ChatAnthropic(model=model_name, temperature=temperature, **kwargs)
     elif provider == "google":
         if ChatGoogleGenerativeAI is None:
@@ -130,7 +136,9 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
             )
         # Google usa `max_output_tokens` para limitar a saída.
         if "max_output_tokens" not in kwargs:
-            kwargs["max_output_tokens"] = 2048
+            # Google Gemini permite saídas longas; definimos um limite alto
+            # para evitar truncamentos prematuros.
+            kwargs["max_output_tokens"] = 12000
         # Para Google Generative AI, o parâmetro de temperatura possui nome
         # diferente. Fornecemos via kwargs caso esteja disponível.
         llm = ChatGoogleGenerativeAI(model=model_name, temperature=temperature, **kwargs)
@@ -143,7 +151,9 @@ def get_chat_model(model_name: str, temperature: float = 0.7, **kwargs) -> objec
                 "Biblioteca langchain_deepseek não está instalada."
             )
         if "max_tokens" not in kwargs:
-            kwargs["max_tokens"] = 2048
+            # DeepSeek também suporta respostas longas; usamos 4096 tokens
+            # como valor padrão para permitir saídas completas.
+            kwargs["max_tokens"] = 8000
         llm = ChatDeepSeek(model=model_name, temperature=temperature, **kwargs)
     else:
         raise ValueError(f"Provedor de LLM '{provider}' não suportado.")
