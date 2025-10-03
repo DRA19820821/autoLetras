@@ -140,6 +140,8 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                     "radical": config.radical,
                     "timestamp_geracao": datetime.now().isoformat(),
                     "ciclos_executados": config.num_ciclos,
+                    "tentativas_juridico": resultado.get("tentativas_juridico", 0),
+                    "tentativas_linguistico": resultado.get("tentativas_linguistico", 0),
                 },
                 "letra": resultado["letra_atual"],
                 "metricas": resultado.get("metricas", {}),

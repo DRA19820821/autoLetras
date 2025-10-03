@@ -30,7 +30,7 @@ from backend.app.utils.logger import get_logger
 
 logger = get_logger()
 
-MAX_TENTATIVAS_REVISAO = 6
+MAX_TENTATIVAS_REVISAO = 5
 
 def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     """

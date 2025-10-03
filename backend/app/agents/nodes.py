@@ -126,7 +126,7 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_juridico_complete", ciclo=ciclo, status=resultado.status)
-        if resultado.status == "reprovado"
+        if resultado.status == "reprovado":
             return {
             "status_juridico": resultado.status, 
             "problemas_juridicos": resultado.problemas,
@@ -214,7 +214,7 @@ async def node_revisor_linguistico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_linguistico_complete", ciclo=ciclo, status=resultado.status)
-        if resultado.status == "reprovado"
+        if resultado.status == "reprovado":
             return {
             "status_linguistico": resultado.status, 
             "problemas_linguisticos": resultado.problemas,
