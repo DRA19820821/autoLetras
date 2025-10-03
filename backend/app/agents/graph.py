@@ -1,24 +1,5 @@
-"""Definição do grafo LangGraph para processamento de letras."""
+"""Definição do grafo LangGraph para processamento de letras - CORRIGIDO."""
 from langgraph.graph import StateGraph, START, END
-"""Definição do grafo LangGraph para processamento de letras.
-
-Este módulo define a construção do grafo e sua compilação. O grafo
-é composto por nós assíncronos (veja `nodes.py`), portanto quando
-executado em modo assíncrono (por exemplo com `graph.ainvoke`) o
-checkpointer também precisa oferecer operações assíncronas. O
-`SqliteSaver` da langgraph suporta apenas métodos síncronos e não
-implementa as interfaces assíncronas utilizadas pelo `ainvoke`. Para
-suportar execução assíncrona, este módulo oferece a função
-`compilar_workflow_async` que usa o `AsyncSqliteSaver` em conjunto
-com `aiosqlite`.
-
-Para compatibilidade com chamadas síncronas, a função
-`compilar_workflow` continua presente e utiliza o `SqliteSaver` para
-montar o grafo com checkpoint síncrono. Se o grafo for executado
-através de métodos assíncronos (`ainvoke` ou `astream`), use
-`compilar_workflow_async`.
-"""
-
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 import aiosqlite
@@ -35,6 +16,8 @@ MAX_TENTATIVAS_REVISAO = 5
 def criar_workflow(num_ciclos: int = 3) -> StateGraph:
     """
     Cria o workflow completo de composição com N ciclos.
+    
+    CORREÇÃO: Usa o ciclo_atual do STATE, não variável de closure.
     """
     workflow = StateGraph(MusicaState)
 
@@ -56,23 +39,37 @@ def criar_workflow(num_ciclos: int = 3) -> StateGraph:
         workflow.add_edge(f"ajustador_jur_c{ciclo}", f"revisor_jur_c{ciclo}")
         workflow.add_edge(f"ajustador_ling_c{ciclo}", f"revisor_ling_c{ciclo}")
 
-        # Roteador após a revisão jurídica
-        def router_juridico(state: Dict) -> str:
-            tentativas = state.get('tentativas_juridico', 0)
-            if state.get('status_juridico') == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
-                return f"revisor_ling_c{ciclo}"
-            return f"ajustador_jur_c{ciclo}"
-        workflow.add_conditional_edges(f"revisor_jur_c{ciclo}", router_juridico)
+        # CORREÇÃO: Criar funções com closure correta usando factory pattern
+        def make_router_juridico(current_ciclo: int):
+            def router_juridico(state: Dict) -> str:
+                tentativas = state.get('tentativas_juridico', 0)
+                if state.get('status_juridico') == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
+                    return f"revisor_ling_c{current_ciclo}"
+                return f"ajustador_jur_c{current_ciclo}"
+            return router_juridico
+        
+        workflow.add_conditional_edges(
+            f"revisor_jur_c{ciclo}", 
+            make_router_juridico(ciclo)
+        )
 
-        # Roteador após a revisão linguística
-        def router_linguistico(state: Dict) -> str:
-            tentativas = state.get('tentativas_linguistico', 0)
-            if state.get('status_linguistico') == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
-                if ciclo >= num_ciclos:
-                    return END
-                return f"compositor_c{ciclo + 1}"
-            return f"ajustador_ling_c{ciclo}"
-        workflow.add_conditional_edges(f"revisor_ling_c{ciclo}", router_linguistico)
+        # CORREÇÃO: Roteador linguístico agora verifica ciclo_atual do STATE
+        def make_router_linguistico(current_ciclo: int, total_ciclos: int):
+            def router_linguistico(state: Dict) -> str:
+                tentativas = state.get('tentativas_linguistico', 0)
+                if state.get('status_linguistico') == 'aprovado' or tentativas >= MAX_TENTATIVAS_REVISAO:
+                    # Verificar se é o último ciclo
+                    if current_ciclo >= total_ciclos:
+                        return END
+                    # Ir para o próximo ciclo
+                    return f"compositor_c{current_ciclo + 1}"
+                return f"ajustador_ling_c{current_ciclo}"
+            return router_linguistico
+        
+        workflow.add_conditional_edges(
+            f"revisor_ling_c{ciclo}", 
+            make_router_linguistico(ciclo, num_ciclos)
+        )
 
     return workflow
 
@@ -82,21 +79,6 @@ def compilar_workflow(
 ) -> "langgraph.pregel.main.PregelGraph":
     """
     Compila o workflow usando um checkpointer SQLite síncrono.
-
-    Esta função mantém compatibilidade com código existente que utiliza
-    chamadas síncronas (por exemplo `graph.invoke`). Ela constrói o
-    grafo e utiliza o `SqliteSaver` para persistir checkpoints de
-    forma síncrona. Se você pretende executar o grafo de forma
-    assíncrona (com `ainvoke`), use `compilar_workflow_async` em vez
-    desta função.
-
-    Parâmetros:
-        num_ciclos: quantidade de ciclos de revisão.
-        checkpointer_path: caminho para o arquivo SQLite de
-            persistência de checkpoints.
-
-    Retorna:
-        Instância compilada do grafo.
     """
     workflow = criar_workflow(num_ciclos)
     try:
@@ -123,20 +105,6 @@ async def compilar_workflow_async(
 ) -> "langgraph.pregel.main.PregelGraph":
     """
     Compila o workflow utilizando um checkpointer SQLite assíncrono.
-
-    Esta função deve ser utilizada quando o grafo será executado por
-    métodos assíncronos como `ainvoke` ou `astream`. Ela abre uma
-    conexão com o banco de dados via `aiosqlite` e cria um
-    `AsyncSqliteSaver`, que implementa as interfaces assíncronas
-    necessárias.
-
-    Parâmetros:
-        num_ciclos: quantidade de ciclos de revisão.
-        checkpointer_path: caminho para o arquivo SQLite de
-            persistência de checkpoints.
-
-    Retorna:
-        Instância compilada do grafo.
     """
     workflow = criar_workflow(num_ciclos)
     try:

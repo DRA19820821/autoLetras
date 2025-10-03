@@ -1,4 +1,4 @@
-"""Nós do LangGraph refatorados para usar Saída Estruturada (Function Calling)."""
+"""Nós do LangGraph - CORRIGIDO para múltiplos ciclos."""
 
 from typing import Literal, TypedDict, Tuple
 from pydantic import BaseModel, Field
@@ -20,23 +20,16 @@ async def call_llm_with_structured_output(
 ) -> Tuple[BaseModel, bool]:
     """
     Função helper para chamar um LLM com fallback e esperar uma saída estruturada.
-
-    Essa função detecta o provedor a partir do nome do modelo ao invés de
-    confiar em um atributo dinâmico nos objetos LLM, uma vez que alguns
-    clientes de modelo podem não permitir a adição do atributo `provider`.
-
-    Args:
-        modelo_primario: Nome do modelo primário
-        modelo_fallback: Nome do modelo de fallback
-        system_prompt: Prompt de sistema
-        user_prompt: Prompt do usuário
-        output_schema: Esquema Pydantic esperado na resposta
-
-    Returns:
-        Tupla com a resposta convertida para o schema e um boolean indicando
-        se o fallback foi usado.
     """
-    throttler = get_throttler()
+    # Tentar obter throttler, mas não falhar se não estiver inicializado
+    try:
+        throttler = get_throttler()
+        use_throttler = True
+    except RuntimeError:
+        logger.warning("throttler_not_initialized", msg="Executando sem throttling")
+        throttler = None
+        use_throttler = False
+    
     usou_fallback = False
 
     async def attempt_call(model_name: str):
@@ -46,10 +39,12 @@ async def call_llm_with_structured_output(
         async def _api_call():
             return await structured_llm.ainvoke(f"{system_prompt}\n\n{user_prompt}")
 
-        # Detectar o provedor baseado no nome do modelo, evitando acesso a
-        # atributos dinâmicos que podem não existir
-        provider = _detect_provider_from_model(model_name)
-        return await throttler.call(provider, _api_call)
+        if use_throttler:
+            provider = _detect_provider_from_model(model_name)
+            return await throttler.call(provider, _api_call)
+        else:
+            # Sem throttling - chamada direta
+            return await _api_call()
 
     try:
         resultado = await attempt_call(modelo_primario)
@@ -75,33 +70,58 @@ async def call_llm_with_structured_output(
 
 
 async def node_compositor(state: MusicaState) -> dict:
+    """
+    Compositor: Cria uma música NOVA do zero em cada ciclo (independente dos anteriores).
+    """
     ciclo = state['ciclo_atual']
     set_etapa_context(f"compositor_c{ciclo}")
     logger.info("compositor_start", ciclo=ciclo)
 
     config_ciclo = state['config'][f'ciclo_{ciclo}']
+    
+    # Sempre usa apenas o conteúdo original - cada ciclo é independente
     system_prompt = prompts.COMPOSITOR_SYSTEM.format(tema=state['tema'], estilo=state['estilo'])
     user_prompt = prompts.COMPOSITOR_PROMPT.format(
         tema=state['tema'], topico=state['topico'], estilo=state['estilo'], conteudo=state['conteudo']
     )
     try:
-        resultado, _ = await call_llm_with_structured_output(
+        resultado, usou_fallback = await call_llm_with_structured_output(
             config_ciclo['compositor']['primario'],
             config_ciclo['compositor']['fallback'],
             system_prompt,
             user_prompt,
             LetraMusical,
         )
-        logger.info("compositor_success", ciclo=ciclo)
+        
+        # Registrar qual modelo foi usado
+        modelo_usado = config_ciclo['compositor']['fallback'] if usou_fallback else config_ciclo['compositor']['primario']
+        llms_usados = state.get('llms_usados', {})
+        if f'ciclo_{ciclo}' not in llms_usados:
+            llms_usados[f'ciclo_{ciclo}'] = []
+        llms_usados[f'ciclo_{ciclo}'].append({
+            "etapa": "compositor",
+            "modelo": modelo_usado,
+            "fallback": usou_fallback
+        })
+        
+        logger.info("compositor_success", ciclo=ciclo, modelo=modelo_usado)
+        
+        # CORREÇÃO: Resetar contadores ao iniciar novo ciclo
         return {
             "letra_atual": resultado.letra,
             "status_juridico": "pendente",
             "tentativas_juridico": 0,
+            "status_linguistico": "pendente", 
+            "tentativas_linguistico": 0,
             "etapa_atual": "revisor_juridico",
+            "llms_usados": llms_usados
         }
     except Exception as e:
         logger.error("compositor_failed", erro=str(e))
-        return {"status_juridico": "falha"}
+        return {
+            "status_juridico": "falha",
+            "tentativas_juridico": state.get("tentativas_juridico", 0) + 1
+        }
 
 
 async def node_revisor_juridico(state: MusicaState) -> dict:
@@ -115,38 +135,40 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
         tema=state['tema'], topico=state['topico'], conteudo=state['conteudo'], letra=state['letra_atual']
     )
     try:
-        resultado, _ = await call_llm_with_structured_output(
+        resultado, usou_fallback = await call_llm_with_structured_output(
             config_ciclo['revisor_juridico']['primario'],
             config_ciclo['revisor_juridico']['fallback'],
             system_prompt,
             user_prompt,
             ResultadoRevisao,
         )
-        # Lógica de consistência
+        
+        # Registrar modelo usado
+        modelo_usado = config_ciclo['revisor_juridico']['fallback'] if usou_fallback else config_ciclo['revisor_juridico']['primario']
+        llms_usados = state.get('llms_usados', {})
+        if f'ciclo_{ciclo}' not in llms_usados:
+            llms_usados[f'ciclo_{ciclo}'] = []
+        llms_usados[f'ciclo_{ciclo}'].append({
+            "etapa": "revisor_juridico",
+            "modelo": modelo_usado,
+            "fallback": usou_fallback,
+            "tentativa": state.get('tentativas_juridico', 0) + 1
+        })
+        
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
-        logger.info("revisor_juridico_complete", ciclo=ciclo, status=resultado.status)
-        if resultado.status == "reprovado":
-            return {
+        logger.info("revisor_juridico_complete", ciclo=ciclo, status=resultado.status, modelo=modelo_usado)
+        
+        updates = {
             "status_juridico": resultado.status, 
             "problemas_juridicos": resultado.problemas,
-            "tentativas_juridico": state.get("tentativas_juridico", 0) + 1
-            }
-        else:
-            return {"status_juridico": resultado.status, "problemas_juridicos": resultado.problemas}
+            "llms_usados": llms_usados
+        }
+        if resultado.status == "reprovado":
+            updates["tentativas_juridico"] = state.get("tentativas_juridico", 0) + 1
+        return updates
             
     except Exception as e:
-        """
-        Em caso de falha no LLM (exemplo: erro de requisição ou exceção interna),
-        incrementamos o número de tentativas e marcamos o status como "falha".
-
-        O incremento é importante para que o roteador de revisão jurídica possa
-        eventualmente encerrar o ciclo após exceder o limite de tentativas,
-        evitando loops que estouram o limite de recursão do grafo. Sem esse
-        incremento, o valor de `tentativas_juridico` permanece 0 e o fluxo
-        retornará indefinidamente para o ajustador jurídico, causando o erro
-        "Recursion limit of 100 reached without hitting a stop condition".
-        """
         logger.error("revisor_juridico_failed", erro=str(e))
         return {
             "status_juridico": "falha",
@@ -166,26 +188,34 @@ async def node_ajustador_juridico(state: MusicaState) -> dict:
         problemas=problemas_texto, letra=state['letra_atual'], conteudo=state['conteudo']
     )
     try:
-        resultado, _ = await call_llm_with_structured_output(
+        resultado, usou_fallback = await call_llm_with_structured_output(
             config_ciclo['ajustador_juridico']['primario'],
             config_ciclo['ajustador_juridico']['fallback'],
             system_prompt,
             user_prompt,
             LetraAjustada,
         )
-        logger.info("ajustador_juridico_complete", ciclo=ciclo)
+        
+        # Registrar modelo usado
+        modelo_usado = config_ciclo['ajustador_juridico']['fallback'] if usou_fallback else config_ciclo['ajustador_juridico']['primario']
+        llms_usados = state.get('llms_usados', {})
+        if f'ciclo_{ciclo}' not in llms_usados:
+            llms_usados[f'ciclo_{ciclo}'] = []
+        llms_usados[f'ciclo_{ciclo}'].append({
+            "etapa": "ajustador_juridico",
+            "modelo": modelo_usado,
+            "fallback": usou_fallback,
+            "tentativa": state.get('tentativas_juridico', 0)
+        })
+        
+        logger.info("ajustador_juridico_complete", ciclo=ciclo, modelo=modelo_usado)
         return {
             "letra_anterior": state['letra_atual'],
             "letra_atual": resultado.letra,
             "status_juridico": "pendente",
+            "llms_usados": llms_usados
         }
     except Exception as e:
-        """
-        Se o ajustador jurídico falhar (por exemplo, devido a erro no LLM),
-        incrementamos `tentativas_juridico` para permitir que o roteador avance
-        após o número máximo de tentativas. Também marcamos o status como
-        "falha" para sinalizar que a revisão não pode continuar com sucesso.
-        """
         logger.error("ajustador_juridico_failed", erro=str(e))
         return {
             "status_juridico": "falha",
@@ -210,25 +240,35 @@ async def node_revisor_linguistico(state: MusicaState) -> dict:
             user_prompt,
             ResultadoRevisao,
         )
-        # Lógica de consistência
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_linguistico_complete", ciclo=ciclo, status=resultado.status)
+        
+        # CORREÇÃO: Só incrementar ciclo se aprovado/falha E não for o último ciclo
+        updates = {}
         if resultado.status == "reprovado":
-            return {
-            "status_linguistico": resultado.status, 
-            "problemas_linguisticos": resultado.problemas,
-            "tentativas_linguistico": state.get("tentativas_linguistico", 0) + 1
+            updates = {
+                "status_linguistico": resultado.status, 
+                "problemas_linguisticos": resultado.problemas,
+                "tentativas_linguistico": state.get("tentativas_linguistico", 0) + 1
             }
         else:
-            return {"status_linguistico": resultado.status, "problemas_linguisticos": resultado.problemas}
+            # Aprovado ou excedeu tentativas
+            # Verificar quantos ciclos existem no config
+            num_ciclos_total = len([k for k in state['config'].keys() if k.startswith('ciclo_')])
+            
+            updates = {
+                "status_linguistico": resultado.status, 
+                "problemas_linguisticos": resultado.problemas,
+            }
+            
+            # Só incrementar se NÃO for o último ciclo
+            if ciclo < num_ciclos_total:
+                updates["ciclo_atual"] = ciclo + 1
+        
+        return updates
             
     except Exception as e:
-        """
-        Em caso de falha no revisor linguístico, incrementamos o contador de
-        tentativas e retornamos um status de "falha". O incremento evita
-        recursão infinita no grafo quando há erros consecutivos.
-        """
         logger.error("revisor_linguistico_failed", erro=str(e))
         return {
             "status_linguistico": "falha",
@@ -247,25 +287,34 @@ async def node_ajustador_linguistico(state: MusicaState) -> dict:
         problemas=problemas_texto, letra=state['letra_atual']
     )
     try:
-        resultado, _ = await call_llm_with_structured_output(
+        resultado, usou_fallback = await call_llm_with_structured_output(
             config_ciclo['ajustador_linguistico']['primario'],
             config_ciclo['ajustador_linguistico']['fallback'],
             system_prompt,
             user_prompt,
             LetraAjustada,
         )
-        logger.info("ajustador_linguistico_complete", ciclo=ciclo)
+        
+        # Registrar modelo usado
+        modelo_usado = config_ciclo['ajustador_linguistico']['fallback'] if usou_fallback else config_ciclo['ajustador_linguistico']['primario']
+        llms_usados = state.get('llms_usados', {})
+        if f'ciclo_{ciclo}' not in llms_usados:
+            llms_usados[f'ciclo_{ciclo}'] = []
+        llms_usados[f'ciclo_{ciclo}'].append({
+            "etapa": "ajustador_linguistico",
+            "modelo": modelo_usado,
+            "fallback": usou_fallback,
+            "tentativa": state.get('tentativas_linguistico', 0)
+        })
+        
+        logger.info("ajustador_linguistico_complete", ciclo=ciclo, modelo=modelo_usado)
         return {
             "letra_anterior": state['letra_atual'],
             "letra_atual": resultado.letra,
             "status_linguistico": "pendente",
+            "llms_usados": llms_usados
         }
     except Exception as e:
-        """
-        Se o ajustador linguístico falhar, atualizamos `tentativas_linguistico`
-        para que o roteamento possa eventualmente parar após exceder o limite
-        definido. Marcamos também o status como "falha".
-        """
         logger.error("ajustador_linguistico_failed", erro=str(e))
         return {
             "status_linguistico": "falha",

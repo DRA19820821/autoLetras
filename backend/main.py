@@ -154,22 +154,85 @@ async def criar_execucao(request: IniciarExecucaoRequest):
 async def stream_execucao(execucao_id: str):
     """
     Stream de atualizações de status via SSE usando Redis Pub/Sub.
+    CORRIGIDO: Melhor tratamento de erros e keepalive.
     """
     channel = f"execucao_status:{execucao_id}"
-
+    logger = get_logger()
+    
     async def event_generator():
-        pubsub = get_redis_connection().pubsub()
-        pubsub.subscribe(channel)
-        
-        # Envia o estado atual primeiro
-        current_status = get_execution_status(execucao_id)
-        if current_status:
-             yield {"event": "status", "data": json.dumps({"type": "full_status", "payload": current_status})}
-
-        for message in pubsub.listen():
-            if message["type"] == "message":
-                yield {"event": "status", "data": message["data"]}
-
+        pubsub = None
+        try:
+            # Criar nova conexão Redis para este stream
+            pubsub = get_redis_connection().pubsub()
+            pubsub.subscribe(channel)
+            
+            logger.info("sse_connection_opened", execucao_id=execucao_id, channel=channel)
+            
+            # Enviar status inicial
+            current_status = get_execution_status(execucao_id)
+            if current_status:
+                yield {
+                    "event": "message",
+                    "data": json.dumps({
+                        "type": "full_status",
+                        "payload": current_status
+                    })
+                }
+                logger.debug("sse_sent_initial_status", execucao_id=execucao_id)
+            else:
+                logger.warning("sse_no_initial_status", execucao_id=execucao_id)
+            
+            # Timeout e contador de mensagens vazias
+            import time
+            last_message_time = time.time()
+            keepalive_interval = 15  # segundos
+            
+            # Escutar mensagens
+            for message in pubsub.listen():
+                if message["type"] == "message":
+                    last_message_time = time.time()
+                    
+                    # Enviar mensagem ao cliente
+                    yield {
+                        "event": "message",
+                        "data": message["data"]
+                    }
+                    
+                    logger.debug(
+                        "sse_message_sent",
+                        execucao_id=execucao_id,
+                        data_preview=message["data"][:100]
+                    )
+                
+                # Keepalive - enviar comentário a cada 15s
+                elif time.time() - last_message_time > keepalive_interval:
+                    yield {
+                        "event": "ping",
+                        "data": json.dumps({"type": "keepalive", "timestamp": time.time()})
+                    }
+                    last_message_time = time.time()
+                    logger.debug("sse_keepalive_sent", execucao_id=execucao_id)
+                    
+        except Exception as e:
+            logger.error(
+                "sse_stream_error",
+                execucao_id=execucao_id,
+                error=str(e),
+                exc_info=True
+            )
+            yield {
+                "event": "error",
+                "data": json.dumps({"type": "error", "message": str(e)})
+            }
+        finally:
+            if pubsub:
+                try:
+                    pubsub.unsubscribe(channel)
+                    pubsub.close()
+                    logger.info("sse_connection_closed", execucao_id=execucao_id)
+                except Exception as e:
+                    logger.error("sse_cleanup_error", error=str(e))
+    
     return EventSourceResponse(event_generator())
 
 @app.get("/api/execucoes/{execucao_id}")

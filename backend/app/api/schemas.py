@@ -115,3 +115,6 @@ class MusicaState(TypedDict, total=False):
     
     # Métricas e custos
     metricas: Dict[str, Any]
+    
+    #llms
+    llms_usados: Dict[str, List[Dict[str, str]]] 

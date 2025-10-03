@@ -2,12 +2,6 @@
 
 {% block title %}Monitorando Execução - {{ execucao_id }}{% endblock %}
 
-{% block extra_head %}
-<!-- HTMX com extensão SSE -->
-<script src="https://unpkg.com/htmx.org@2.0.0/dist/htmx.min.js"></script>
-<script src="https://unpkg.com/htmx-ext-sse@2.2.1/sse.js"></script>
-{% endblock %}
-
 {% block content %}
 <div class="max-w-6xl mx-auto">
     
@@ -16,9 +10,13 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="text-xl font-semibold mb-2">Monitorando Execução</h2>
-                <p class="text-sm text-gray-500 font-mono" id="execucaoId">{{ execucao_id }}</p>
+                <p class="text-sm text-gray-500 font-mono">{{ execucao_id }}</p>
             </div>
             <div class="text-right">
+                <div id="connectionStatus" class="text-sm mb-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>
+                    <span>Conectando...</span>
+                </div>
                 <p class="font-semibold text-lg" id="geralStatus">Inicializando...</p>
                 <p class="text-sm text-gray-500" id="geralProgresso">Progresso: 0%</p>
             </div>
@@ -28,40 +26,31 @@
         </div>
     </div>
 
-    <!-- Container com SSE -->
-    <div class="bg-white rounded-lg shadow-md p-6"
-         hx-ext="sse"
-         sse-connect="/api/execucoes/{{ execucao_id }}/stream"
-         sse-swap="none">
-        
+    <!-- Status dos Arquivos -->
+    <div class="bg-white rounded-lg shadow-md p-6">
         <h3 class="text-lg font-semibold mb-4">Status dos Arquivos</h3>
         
         <div id="filesStatusContainer" class="space-y-4">
             {% for arquivo in arquivos %}
-            <div id="status-{{ arquivo.arquivo | replace('.', '_') }}" 
+            <div id="file-{{ arquivo.arquivo | replace('.', '_') }}" 
                  class="p-4 border rounded-lg bg-gray-50 transition-all duration-300">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between mb-2">
                     <p class="font-medium truncate pr-4">{{ arquivo.arquivo }}</p>
-                    <div class="flex items-center space-x-2">
-                        <span class="badge badge-info text-xs">Aguardando</span>
-                    </div>
+                    <span class="badge badge-info text-xs status-badge">Aguardando</span>
                 </div>
-                <div class="mt-2 text-sm text-gray-600">
-                    <p class="etapa">Pronto para iniciar</p>
-                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                        <div class="progresso-barra bg-blue-500 h-1.5 rounded-full transition-all duration-500" 
+                <div class="text-sm text-gray-600">
+                    <p class="etapa-text">Pronto para iniciar</p>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div class="progress-bar bg-blue-500 h-1.5 rounded-full transition-all duration-500" 
                              style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        
-        <!-- Listener para eventos SSE -->
-        <div sse-swap="status" style="display: none;"></div>
     </div>
 
-    <!-- Container de debug (remover em produção) -->
+    <!-- Debug (pode remover em produção) -->
     <div class="mt-6 bg-gray-100 rounded-lg p-4">
         <h4 class="font-semibold mb-2 text-sm">Debug - Últimas Mensagens:</h4>
         <div id="debugMessages" class="text-xs font-mono space-y-1 max-h-32 overflow-y-auto"></div>
@@ -70,103 +59,141 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Monitoring page loaded for execution:', '{{ execucao_id }}');
+(function() {
+    const execucaoId = '{{ execucao_id }}';
+    const streamUrl = `/api/execucoes/${execucaoId}/stream`;
     
     let eventSource = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    
+    // Elementos DOM
+    const connectionStatus = document.getElementById('connectionStatus');
+    const geralStatus = document.getElementById('geralStatus');
+    const geralProgresso = document.getElementById('geralProgresso');
+    const progressBar = document.getElementById('progressBar');
     const debugMessages = document.getElementById('debugMessages');
     
+    // Funções auxiliares
     function addDebugMessage(msg) {
-        if (debugMessages) {
-            const line = document.createElement('div');
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            debugMessages.appendChild(line);
-            debugMessages.scrollTop = debugMessages.scrollHeight;
+        const line = document.createElement('div');
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        debugMessages.appendChild(line);
+        debugMessages.scrollTop = debugMessages.scrollHeight;
+        
+        // Manter apenas últimas 20 mensagens
+        while (debugMessages.children.length > 20) {
+            debugMessages.removeChild(debugMessages.firstChild);
         }
+    }
+    
+    function updateConnectionStatus(status, color) {
+        const dot = connectionStatus.querySelector('.rounded-full');
+        const text = connectionStatus.querySelector('span:last-child');
+        
+        dot.className = `inline-block w-2 h-2 rounded-full ${color} mr-1`;
+        text.textContent = status;
     }
     
     function getBadgeClass(status) {
-        switch (status) {
-            case 'processando': return 'badge-info';
-            case 'concluido': return 'badge-success';
-            case 'falha': return 'badge-error';
-            default: return 'badge-info';
-        }
+        const classes = {
+            'aguardando': 'badge-info',
+            'processando': 'badge-info',
+            'concluido': 'badge-success',
+            'falha': 'badge-error'
+        };
+        return classes[status.toLowerCase()] || 'badge-info';
     }
     
     function getProgressBarClass(status) {
-        switch (status) {
-            case 'processando': return 'bg-blue-500';
-            case 'concluido': return 'bg-green-500';
-            case 'falha': return 'bg-red-500';
-            default: return 'bg-gray-500';
-        }
+        const classes = {
+            'aguardando': 'bg-gray-500',
+            'processando': 'bg-blue-500',
+            'concluido': 'bg-green-500',
+            'falha': 'bg-red-500'
+        };
+        return classes[status.toLowerCase()] || 'bg-blue-500';
     }
     
     function updateFileStatus(data) {
         const fileId = data.arquivo.replace(/\./g, '_');
-        const fileElement = document.getElementById(`status-${fileId}`);
+        const fileElement = document.getElementById(`file-${fileId}`);
         
         if (!fileElement) {
-            addDebugMessage(`Element not found for file: ${data.arquivo}`);
+            addDebugMessage(`⚠️ Element not found: file-${fileId}`);
             return;
         }
         
-        const etapa = fileElement.querySelector('.etapa');
-        const progressBar = fileElement.querySelector('.progresso-barra');
-        const badge = fileElement.querySelector('.badge');
+        const etapaText = fileElement.querySelector('.etapa-text');
+        const progressBarEl = fileElement.querySelector('.progress-bar');
+        const badge = fileElement.querySelector('.status-badge');
         
         if (data.type === 'file_progress') {
-            if (etapa) etapa.textContent = data.etapa_atual || 'Processando...';
-            if (progressBar) progressBar.style.width = `${data.progresso_percentual || 0}%`;
+            // Atualizar progresso
+            if (etapaText) {
+                etapaText.textContent = data.etapa_atual || 'Processando...';
+            }
+            if (progressBarEl) {
+                progressBarEl.style.width = `${data.progresso_percentual || 0}%`;
+                progressBarEl.className = `progress-bar h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass('processando')}`;
+            }
             if (badge) {
-                badge.className = `badge ${getBadgeClass('processando')} text-xs`;
+                badge.className = `badge ${getBadgeClass('processando')} text-xs status-badge`;
                 badge.textContent = 'Processando';
             }
-            if (progressBar) {
-                progressBar.className = `progresso-barra h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass('processando')}`;
-            }
-            addDebugMessage(`Progress update for ${data.arquivo}: ${data.progresso_percentual}%`);
+            
+            addDebugMessage(`📊 ${data.arquivo}: ${data.progresso_percentual}% - ${data.etapa_atual}`);
             
         } else if (data.type === 'file_result') {
+            // Resultado final
             const status = data.status;
-            if (etapa) {
-                etapa.textContent = status === 'concluido' 
-                    ? `Finalizado: ${data.output_gerado}` 
-                    : `Erro: ${data.erro || 'Desconhecido'}`;
+            
+            if (etapaText) {
+                etapaText.textContent = status === 'concluido' 
+                    ? `✅ Concluído: ${data.output_gerado}` 
+                    : `❌ Erro: ${data.erro || 'Desconhecido'}`;
             }
-            if (progressBar) progressBar.style.width = '100%';
+            if (progressBarEl) {
+                progressBarEl.style.width = '100%';
+                progressBarEl.className = `progress-bar h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass(status)}`;
+            }
             if (badge) {
-                badge.className = `badge ${getBadgeClass(status)} text-xs`;
+                badge.className = `badge ${getBadgeClass(status)} text-xs status-badge`;
                 badge.textContent = status === 'concluido' ? 'Concluído' : 'Falha';
             }
-            if (progressBar) {
-                progressBar.className = `progresso-barra h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass(status)}`;
-            }
-            addDebugMessage(`Result for ${data.arquivo}: ${status}`);
+            
+            addDebugMessage(`${status === 'concluido' ? '✅' : '❌'} ${data.arquivo}: ${status}`);
         }
     }
     
-    // Conectar ao SSE manualmente para melhor controle
     function connectSSE() {
-        const url = `/api/execucoes/{{ execucao_id }}/stream`;
-        addDebugMessage(`Connecting to SSE: ${url}`);
+        if (eventSource) {
+            eventSource.close();
+        }
         
-        eventSource = new EventSource(url);
+        addDebugMessage(`🔌 Connecting to: ${streamUrl}`);
+        updateConnectionStatus('Conectando...', 'bg-yellow-500');
+        
+        eventSource = new EventSource(streamUrl);
         
         eventSource.onopen = function() {
-            addDebugMessage('SSE connection established');
+            addDebugMessage('✅ SSE connection established');
+            updateConnectionStatus('Conectado', 'bg-green-500');
+            reconnectAttempts = 0;
+            
+            geralStatus.textContent = 'Processando...';
         };
         
         eventSource.onmessage = function(event) {
             try {
                 const data = JSON.parse(event.data);
-                addDebugMessage(`Received: ${data.type}`);
+                addDebugMessage(`📨 Received: ${data.type}`);
                 
                 if (data.type === 'file_progress' || data.type === 'file_result') {
                     updateFileStatus(data);
+                    
                 } else if (data.type === 'full_status') {
-                    // Atualização completa do status
+                    // Status completo inicial
                     if (data.payload && data.payload.arquivos) {
                         data.payload.arquivos.forEach(arquivo => {
                             updateFileStatus({
@@ -177,39 +204,60 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         });
                     }
+                    
+                } else if (data.type === 'geral_status') {
+                    // Status geral da execução
+                    geralStatus.textContent = data.status || 'Processando';
+                    if (data.progresso_percentual !== undefined) {
+                        geralProgresso.textContent = `Progresso: ${data.progresso_percentual}%`;
+                        progressBar.style.width = `${data.progresso_percentual}%`;
+                    }
                 }
+                
             } catch (error) {
                 console.error('Error parsing SSE data:', error);
-                addDebugMessage(`Error: ${error.message}`);
+                addDebugMessage(`❌ Parse error: ${error.message}`);
             }
         };
         
         eventSource.onerror = function(error) {
             console.error('SSE error:', error);
-            addDebugMessage('SSE connection error - reconnecting...');
+            addDebugMessage('❌ SSE connection error');
+            updateConnectionStatus('Desconectado', 'bg-red-500');
             
-            // Reconectar após 3 segundos
-            setTimeout(() => {
-                if (eventSource.readyState === EventSource.CLOSED) {
-                    connectSSE();
-                }
-            }, 3000);
+            eventSource.close();
+            
+            // Tentar reconectar
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+                addDebugMessage(`🔄 Reconnecting in ${delay/1000}s (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
+                
+                setTimeout(connectSSE, delay);
+            } else {
+                addDebugMessage('❌ Max reconnection attempts reached');
+                updateConnectionStatus('Falha na conexão', 'bg-red-500');
+                geralStatus.textContent = 'Erro de conexão';
+            }
         };
     }
     
-    // Conectar ao SSE
+    // Iniciar conexão
     connectSSE();
     
-    // Cleanup ao sair da página
+    // Limpar ao sair da página
     window.addEventListener('beforeunload', () => {
         if (eventSource) {
             eventSource.close();
         }
     });
-});
+    
+    // Botão para reconectar manualmente (adicionar se necessário)
+    window.reconnectSSE = function() {
+        reconnectAttempts = 0;
+        connectSSE();
+    };
+    
+})();
 </script>
-{% endblock %}
-
-{% block extra_scripts %}
-<!-- Script adicional removido pois está integrado acima -->
 {% endblock %}
