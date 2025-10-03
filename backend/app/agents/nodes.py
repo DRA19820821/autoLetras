@@ -4,8 +4,6 @@ from typing import Literal, TypedDict, Tuple
 from pydantic import BaseModel, Field
 
 from backend.app.core.llm_client import get_chat_model, _detect_provider_from_model
-from backend.app.redis_client import publish_status_update_async
-import math
 from backend.app.retry.throttler import get_throttler
 from backend.app.agents import prompts
 from backend.app.utils.logger import get_logger, set_etapa_context
@@ -95,31 +93,6 @@ async def node_compositor(state: MusicaState) -> dict:
             LetraMusical,
         )
         logger.info("compositor_success", ciclo=ciclo)
-
-        # Emitir atualização de progresso após a conclusão do compositor.  
-        # Calculamos um progresso relativo ao ciclo e à etapa atual. A base de
-        # progresso para o workflow começa em 20 e termina em 80 (as etapas
-        # internas somam 60 pontos). Cada ciclo divide esse intervalo de forma
-        # uniforme entre as etapas compositor, revisor_juridico,
-        # ajustador_juridico, revisor_linguistico e ajustador_linguistico.
-        async def _publish_progress():
-            try:
-                num_ciclos = len(state["config"])
-                ciclo_index = state["ciclo_atual"] - 1
-                cycle_weight = 60.0 / max(1, num_ciclos)
-                stage_index = 0  # compositor é a primeira etapa do ciclo
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state["execucao_id"], {
-                    "type": "file_progress",
-                    "arquivo": state["arquivo"],
-                    "etapa_atual": "compositor",
-                    "progresso_percentual": progresso,
-                    "detalhes": "Composição concluída"
-                })
-            except Exception:
-                pass
-
-        await _publish_progress()
         return {
             "letra_atual": resultado.letra,
             "status_juridico": "pendente",
@@ -128,24 +101,6 @@ async def node_compositor(state: MusicaState) -> dict:
         }
     except Exception as e:
         logger.error("compositor_failed", erro=str(e))
-        # Em caso de falha, emita atualização de progresso indicando a falha
-        async def _publish_fail():
-            try:
-                num_ciclos = len(state.get("config", {})) or 1
-                ciclo_index = state.get("ciclo_atual", 1) - 1
-                cycle_weight = 60.0 / num_ciclos
-                stage_index = 0
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state.get("execucao_id", ""), {
-                    "type": "file_progress",
-                    "arquivo": state.get("arquivo", ""),
-                    "etapa_atual": "compositor",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Falha na composição: {e}"
-                })
-            except Exception:
-                pass
-        await _publish_fail()
         return {"status_juridico": "falha"}
 
 
@@ -171,26 +126,6 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_juridico_complete", ciclo=ciclo, status=resultado.status)
-
-        # Atualizar progresso após conclusão da revisão jurídica
-        async def _publish_progress():
-            try:
-                num_ciclos = len(state["config"])
-                ciclo_index = state["ciclo_atual"] - 1
-                cycle_weight = 60.0 / max(1, num_ciclos)
-                stage_index = 1  # revisor jurídico é a segunda etapa
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state["execucao_id"], {
-                    "type": "file_progress",
-                    "arquivo": state["arquivo"],
-                    "etapa_atual": "revisor_juridico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Revisão jurídica {resultado.status}"
-                })
-            except Exception:
-                pass
-
-        await _publish_progress()
         return {"status_juridico": resultado.status, "problemas_juridicos": resultado.problemas}
     except Exception as e:
         """
@@ -205,24 +140,6 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
         "Recursion limit of 100 reached without hitting a stop condition".
         """
         logger.error("revisor_juridico_failed", erro=str(e))
-        # Atualizar progresso em caso de falha na revisão jurídica
-        async def _publish_fail():
-            try:
-                num_ciclos = len(state.get("config", {})) or 1
-                ciclo_index = state.get("ciclo_atual", 1) - 1
-                cycle_weight = 60.0 / num_ciclos
-                stage_index = 1
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state.get("execucao_id", ""), {
-                    "type": "file_progress",
-                    "arquivo": state.get("arquivo", ""),
-                    "etapa_atual": "revisor_juridico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Falha na revisão jurídica: {e}"
-                })
-            except Exception:
-                pass
-        await _publish_fail()
         return {
             "status_juridico": "falha",
             "tentativas_juridico": state.get("tentativas_juridico", 0) + 1,
@@ -249,25 +166,6 @@ async def node_ajustador_juridico(state: MusicaState) -> dict:
             LetraAjustada,
         )
         logger.info("ajustador_juridico_complete", ciclo=ciclo)
-
-        # Atualizar progresso após conclusão do ajustador jurídico
-        async def _publish_progress():
-            try:
-                num_ciclos = len(state["config"])
-                ciclo_index = state["ciclo_atual"] - 1
-                cycle_weight = 60.0 / max(1, num_ciclos)
-                stage_index = 2  # ajustador jurídico é a terceira etapa
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state["execucao_id"], {
-                    "type": "file_progress",
-                    "arquivo": state["arquivo"],
-                    "etapa_atual": "ajustador_juridico",
-                    "progresso_percentual": progresso,
-                    "detalhes": "Ajuste jurídico concluído"
-                })
-            except Exception:
-                pass
-        await _publish_progress()
         return {
             "letra_anterior": state['letra_atual'],
             "letra_atual": resultado.letra,
@@ -281,24 +179,6 @@ async def node_ajustador_juridico(state: MusicaState) -> dict:
         "falha" para sinalizar que a revisão não pode continuar com sucesso.
         """
         logger.error("ajustador_juridico_failed", erro=str(e))
-        # Atualizar progresso em caso de falha
-        async def _publish_fail():
-            try:
-                num_ciclos = len(state.get("config", {})) or 1
-                ciclo_index = state.get("ciclo_atual", 1) - 1
-                cycle_weight = 60.0 / num_ciclos
-                stage_index = 2
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state.get("execucao_id", ""), {
-                    "type": "file_progress",
-                    "arquivo": state.get("arquivo", ""),
-                    "etapa_atual": "ajustador_juridico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Falha no ajuste jurídico: {e}"
-                })
-            except Exception:
-                pass
-        await _publish_fail()
         return {
             "status_juridico": "falha",
             "tentativas_juridico": state.get("tentativas_juridico", 0) + 1,
@@ -326,25 +206,6 @@ async def node_revisor_linguistico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_linguistico_complete", ciclo=ciclo, status=resultado.status)
-
-        # Atualizar progresso após conclusão do revisor linguístico
-        async def _publish_progress():
-            try:
-                num_ciclos = len(state["config"])
-                ciclo_index = state["ciclo_atual"] - 1
-                cycle_weight = 60.0 / max(1, num_ciclos)
-                stage_index = 3  # revisor linguístico é a quarta etapa
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state["execucao_id"], {
-                    "type": "file_progress",
-                    "arquivo": state["arquivo"],
-                    "etapa_atual": "revisor_linguistico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Revisão linguística {resultado.status}"
-                })
-            except Exception:
-                pass
-        await _publish_progress()
         return {"status_linguistico": resultado.status, "problemas_linguisticos": resultado.problemas}
     except Exception as e:
         """
@@ -353,24 +214,6 @@ async def node_revisor_linguistico(state: MusicaState) -> dict:
         recursão infinita no grafo quando há erros consecutivos.
         """
         logger.error("revisor_linguistico_failed", erro=str(e))
-        # Atualizar progresso em caso de falha
-        async def _publish_fail():
-            try:
-                num_ciclos = len(state.get("config", {})) or 1
-                ciclo_index = state.get("ciclo_atual", 1) - 1
-                cycle_weight = 60.0 / num_ciclos
-                stage_index = 3
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state.get("execucao_id", ""), {
-                    "type": "file_progress",
-                    "arquivo": state.get("arquivo", ""),
-                    "etapa_atual": "revisor_linguistico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Falha na revisão linguística: {e}"
-                })
-            except Exception:
-                pass
-        await _publish_fail()
         return {
             "status_linguistico": "falha",
             "tentativas_linguistico": state.get("tentativas_linguistico", 0) + 1,
@@ -396,25 +239,6 @@ async def node_ajustador_linguistico(state: MusicaState) -> dict:
             LetraAjustada,
         )
         logger.info("ajustador_linguistico_complete", ciclo=ciclo)
-
-        # Atualizar progresso após conclusão do ajustador linguístico
-        async def _publish_progress():
-            try:
-                num_ciclos = len(state["config"])
-                ciclo_index = state["ciclo_atual"] - 1
-                cycle_weight = 60.0 / max(1, num_ciclos)
-                stage_index = 4  # ajustador linguístico é a quinta etapa
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state["execucao_id"], {
-                    "type": "file_progress",
-                    "arquivo": state["arquivo"],
-                    "etapa_atual": "ajustador_linguistico",
-                    "progresso_percentual": progresso,
-                    "detalhes": "Ajuste linguístico concluído"
-                })
-            except Exception:
-                pass
-        await _publish_progress()
         return {
             "letra_anterior": state['letra_atual'],
             "letra_atual": resultado.letra,
@@ -427,24 +251,6 @@ async def node_ajustador_linguistico(state: MusicaState) -> dict:
         definido. Marcamos também o status como "falha".
         """
         logger.error("ajustador_linguistico_failed", erro=str(e))
-        # Atualizar progresso em caso de falha
-        async def _publish_fail():
-            try:
-                num_ciclos = len(state.get("config", {})) or 1
-                ciclo_index = state.get("ciclo_atual", 1) - 1
-                cycle_weight = 60.0 / num_ciclos
-                stage_index = 4
-                progresso = int(20 + ciclo_index * cycle_weight + stage_index * (cycle_weight / 5))
-                await publish_status_update_async(state.get("execucao_id", ""), {
-                    "type": "file_progress",
-                    "arquivo": state.get("arquivo", ""),
-                    "etapa_atual": "ajustador_linguistico",
-                    "progresso_percentual": progresso,
-                    "detalhes": f"Falha no ajuste linguístico: {e}"
-                })
-            except Exception:
-                pass
-        await _publish_fail()
         return {
             "status_linguistico": "falha",
             "tentativas_linguistico": state.get("tentativas_linguistico", 0) + 1,
