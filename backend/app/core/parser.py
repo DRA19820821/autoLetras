@@ -138,7 +138,7 @@ def sanitizar_topico(topico: str, max_len: int = 12) -> str:
     Returns:
         Tópico sanitizado
     """
-    stopwords = {'e', 'a', 'o', 'de', 'da', 'do', 'dos', 'das', 'para', 'por', 'em', 'no', 'na'}
+    stopwords = {'e',')','(', 'a', 'o', 'de', 'da', 'do', 'dos', 'das', 'para', 'por', 'em', 'no', 'na'}
     
     palavras = [
         p[:3].capitalize() 
