@@ -126,7 +126,15 @@ async def node_revisor_juridico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_juridico_complete", ciclo=ciclo, status=resultado.status)
-        return {"status_juridico": resultado.status, "problemas_juridicos": resultado.problemas}
+        if resultado.status == "reprovado"
+            return {
+            "status_juridico": resultado.status, 
+            "problemas_juridicos": resultado.problemas,
+            "tentativas_juridico": state.get("tentativas_juridico", 0) + 1
+            }
+        else:
+            return {"status_juridico": resultado.status, "problemas_juridicos": resultado.problemas}
+            
     except Exception as e:
         """
         Em caso de falha no LLM (exemplo: erro de requisição ou exceção interna),
@@ -206,7 +214,15 @@ async def node_revisor_linguistico(state: MusicaState) -> dict:
         if resultado.status == "aprovado" and resultado.problemas:
             resultado.status = "reprovado"
         logger.info("revisor_linguistico_complete", ciclo=ciclo, status=resultado.status)
-        return {"status_linguistico": resultado.status, "problemas_linguisticos": resultado.problemas}
+        if resultado.status == "reprovado"
+            return {
+            "status_linguistico": resultado.status, 
+            "problemas_linguisticos": resultado.problemas,
+            "tentativas_linguistico": state.get("tentativas_linguistico", 0) + 1
+            }
+        else:
+            return {"status_linguistico": resultado.status, "problemas_linguisticos": resultado.problemas}
+            
     except Exception as e:
         """
         Em caso de falha no revisor linguístico, incrementamos o contador de

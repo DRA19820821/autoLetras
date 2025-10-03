@@ -3,12 +3,15 @@
 {% block title %}Monitorando Execução - {{ execucao_id }}{% endblock %}
 
 {% block extra_head %}
-<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+<!-- HTMX com extensão SSE -->
+<script src="https://unpkg.com/htmx.org@2.0.0/dist/htmx.min.js"></script>
+<script src="https://unpkg.com/htmx-ext-sse@2.2.1/sse.js"></script>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto" hx-ext="sse" sse-connect="/api/execucoes/{{ execucao_id }}/stream" sse-swap="message">
+<div class="max-w-6xl mx-auto">
     
+    <!-- Cabeçalho com status geral -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <div class="flex justify-between items-center">
             <div>
@@ -21,15 +24,22 @@
             </div>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-md p-6">
+    <!-- Container com SSE -->
+    <div class="bg-white rounded-lg shadow-md p-6"
+         hx-ext="sse"
+         sse-connect="/api/execucoes/{{ execucao_id }}/stream"
+         sse-swap="none">
+        
         <h3 class="text-lg font-semibold mb-4">Status dos Arquivos</h3>
+        
         <div id="filesStatusContainer" class="space-y-4">
             {% for arquivo in arquivos %}
-            <div id="status-{{ arquivo.arquivo | replace('.', '_') }}" class="p-4 border rounded-lg bg-gray-50">
+            <div id="status-{{ arquivo.arquivo | replace('.', '_') }}" 
+                 class="p-4 border rounded-lg bg-gray-50 transition-all duration-300">
                 <div class="flex items-center justify-between">
                     <p class="font-medium truncate pr-4">{{ arquivo.arquivo }}</p>
                     <div class="flex items-center space-x-2">
@@ -39,33 +49,167 @@
                 <div class="mt-2 text-sm text-gray-600">
                     <p class="etapa">Pronto para iniciar</p>
                     <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                        <div class="progresso-barra bg-blue-500 h-1.5 rounded-full" style="width: 0%;"></div>
+                        <div class="progresso-barra bg-blue-500 h-1.5 rounded-full transition-all duration-500" 
+                             style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
+        
+        <!-- Listener para eventos SSE -->
+        <div sse-swap="status" style="display: none;"></div>
+    </div>
+
+    <!-- Container de debug (remover em produção) -->
+    <div class="mt-6 bg-gray-100 rounded-lg p-4">
+        <h4 class="font-semibold mb-2 text-sm">Debug - Últimas Mensagens:</h4>
+        <div id="debugMessages" class="text-xs font-mono space-y-1 max-h-32 overflow-y-auto"></div>
     </div>
 
 </div>
 
-<div id="sse-template" class="hidden">
-    <div class="p-4 border rounded-lg">
-        <div class="flex items-center justify-between">
-            <p class="font-medium truncate pr-4 sse-arquivo-nome"></p>
-            <div class="flex items-center space-x-2 sse-status-badge"></div>
-        </div>
-        <div class="mt-2 text-sm text-gray-600">
-            <p class="etapa sse-etapa"></p>
-            <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                <div class="progresso-barra h-1.5 rounded-full sse-progresso-barra" style="width: 0%;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Monitoring page loaded for execution:', '{{ execucao_id }}');
+    
+    let eventSource = null;
+    const debugMessages = document.getElementById('debugMessages');
+    
+    function addDebugMessage(msg) {
+        if (debugMessages) {
+            const line = document.createElement('div');
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugMessages.appendChild(line);
+            debugMessages.scrollTop = debugMessages.scrollHeight;
+        }
+    }
+    
+    function getBadgeClass(status) {
+        switch (status) {
+            case 'processando': return 'badge-info';
+            case 'concluido': return 'badge-success';
+            case 'falha': return 'badge-error';
+            default: return 'badge-info';
+        }
+    }
+    
+    function getProgressBarClass(status) {
+        switch (status) {
+            case 'processando': return 'bg-blue-500';
+            case 'concluido': return 'bg-green-500';
+            case 'falha': return 'bg-red-500';
+            default: return 'bg-gray-500';
+        }
+    }
+    
+    function updateFileStatus(data) {
+        const fileId = data.arquivo.replace(/\./g, '_');
+        const fileElement = document.getElementById(`status-${fileId}`);
+        
+        if (!fileElement) {
+            addDebugMessage(`Element not found for file: ${data.arquivo}`);
+            return;
+        }
+        
+        const etapa = fileElement.querySelector('.etapa');
+        const progressBar = fileElement.querySelector('.progresso-barra');
+        const badge = fileElement.querySelector('.badge');
+        
+        if (data.type === 'file_progress') {
+            if (etapa) etapa.textContent = data.etapa_atual || 'Processando...';
+            if (progressBar) progressBar.style.width = `${data.progresso_percentual || 0}%`;
+            if (badge) {
+                badge.className = `badge ${getBadgeClass('processando')} text-xs`;
+                badge.textContent = 'Processando';
+            }
+            if (progressBar) {
+                progressBar.className = `progresso-barra h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass('processando')}`;
+            }
+            addDebugMessage(`Progress update for ${data.arquivo}: ${data.progresso_percentual}%`);
+            
+        } else if (data.type === 'file_result') {
+            const status = data.status;
+            if (etapa) {
+                etapa.textContent = status === 'concluido' 
+                    ? `Finalizado: ${data.output_gerado}` 
+                    : `Erro: ${data.erro || 'Desconhecido'}`;
+            }
+            if (progressBar) progressBar.style.width = '100%';
+            if (badge) {
+                badge.className = `badge ${getBadgeClass(status)} text-xs`;
+                badge.textContent = status === 'concluido' ? 'Concluído' : 'Falha';
+            }
+            if (progressBar) {
+                progressBar.className = `progresso-barra h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass(status)}`;
+            }
+            addDebugMessage(`Result for ${data.arquivo}: ${status}`);
+        }
+    }
+    
+    // Conectar ao SSE manualmente para melhor controle
+    function connectSSE() {
+        const url = `/api/execucoes/{{ execucao_id }}/stream`;
+        addDebugMessage(`Connecting to SSE: ${url}`);
+        
+        eventSource = new EventSource(url);
+        
+        eventSource.onopen = function() {
+            addDebugMessage('SSE connection established');
+        };
+        
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                addDebugMessage(`Received: ${data.type}`);
+                
+                if (data.type === 'file_progress' || data.type === 'file_result') {
+                    updateFileStatus(data);
+                } else if (data.type === 'full_status') {
+                    // Atualização completa do status
+                    if (data.payload && data.payload.arquivos) {
+                        data.payload.arquivos.forEach(arquivo => {
+                            updateFileStatus({
+                                type: 'file_progress',
+                                arquivo: arquivo.arquivo,
+                                etapa_atual: arquivo.etapa_atual,
+                                progresso_percentual: arquivo.progresso_percentual
+                            });
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing SSE data:', error);
+                addDebugMessage(`Error: ${error.message}`);
+            }
+        };
+        
+        eventSource.onerror = function(error) {
+            console.error('SSE error:', error);
+            addDebugMessage('SSE connection error - reconnecting...');
+            
+            // Reconectar após 3 segundos
+            setTimeout(() => {
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    connectSSE();
+                }
+            }, 3000);
+        };
+    }
+    
+    // Conectar ao SSE
+    connectSSE();
+    
+    // Cleanup ao sair da página
+    window.addEventListener('beforeunload', () => {
+        if (eventSource) {
+            eventSource.close();
+        }
+    });
+});
+</script>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/monitoring.js"></script>
+<!-- Script adicional removido pois está integrado acima -->
 {% endblock %}

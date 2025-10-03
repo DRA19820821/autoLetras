@@ -1,0 +1,88 @@
+================================================
+COMANDOS ESSENCIAIS DOCKER - WINDOWS 11
+================================================
+
+SETUP INICIAL (executar uma vez):
+----------------------------------
+.\docker-setup-windows.ps1
+
+
+INICIAR O SISTEMA:
+------------------
+docker-compose up -d
+
+
+PARAR O SISTEMA:
+----------------
+docker-compose down
+
+
+VER LOGS EM TEMPO REAL:
+------------------------
+docker-compose logs -f
+
+
+VER STATUS DOS CONTAINERS:
+---------------------------
+docker-compose ps
+
+
+REINICIAR TUDO:
+---------------
+docker-compose restart
+
+
+RECONSTRUIR (se houver mudanças no código):
+--------------------------------------------
+docker-compose build
+docker-compose up -d
+
+
+TESTAR SE ESTÁ FUNCIONANDO:
+----------------------------
+.\test-docker.ps1
+
+
+LIMPAR TUDO E COMEÇAR DO ZERO:
+-------------------------------
+docker-compose down -v
+docker-compose build --no-cache
+docker-compose up -d
+
+
+ACESSAR A APLICAÇÃO:
+--------------------
+http://localhost:8000
+
+
+VER ARQUIVOS GERADOS:
+---------------------
+Pasta: data\outputs\
+
+
+EDITAR CONFIGURAÇÃO:
+--------------------
+notepad .env
+
+
+================================================
+FLUXO NORMAL DE USO:
+================================================
+
+1. Iniciar sistema:
+   docker-compose up -d
+
+2. Acessar no navegador:
+   http://localhost:8000
+
+3. Fazer upload dos HTMLs
+
+4. Configurar e processar
+
+5. Ver resultados em:
+   data\outputs\
+
+6. Quando terminar:
+   docker-compose down
+
+================================================
