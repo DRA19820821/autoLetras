@@ -150,20 +150,29 @@ async def criar_execucao(request: IniciarExecucaoRequest):
 
     return JSONResponse(content={"execucao_id": execucao_id, "status": "iniciado"})
 
+
 @app.get("/api/execucoes/{execucao_id}/stream")
 async def stream_execucao(execucao_id: str):
-    """
-    Stream de atualizações de status via SSE usando Redis Pub/Sub.
-    CORRIGIDO: Melhor tratamento de erros e keepalive.
-    """
+    """Stream de atualizações via SSE - CORRIGIDO para async."""
     channel = f"execucao_status:{execucao_id}"
     logger = get_logger()
     
     async def event_generator():
         pubsub = None
         try:
-            # Criar nova conexão Redis para este stream
-            pubsub = get_redis_connection().pubsub()
+            import redis
+            import asyncio
+            import time
+            
+            # Conexão Redis síncrona
+            r = redis.StrictRedis(
+                host=os.getenv("REDIS_HOST", "localhost"),
+                port=int(os.getenv("REDIS_PORT", 6379)),
+                db=0,
+                decode_responses=True
+            )
+            
+            pubsub = r.pubsub(ignore_subscribe_messages=True)
             pubsub.subscribe(channel)
             
             logger.info("sse_connection_opened", execucao_id=execucao_id, channel=channel)
@@ -178,48 +187,38 @@ async def stream_execucao(execucao_id: str):
                         "payload": current_status
                     })
                 }
-                logger.debug("sse_sent_initial_status", execucao_id=execucao_id)
-            else:
-                logger.warning("sse_no_initial_status", execucao_id=execucao_id)
             
-            # Timeout e contador de mensagens vazias
-            import time
             last_message_time = time.time()
-            keepalive_interval = 15  # segundos
+            keepalive_interval = 15
             
-            # Escutar mensagens
-            for message in pubsub.listen():
-                if message["type"] == "message":
+            # CORRIGIDO: Loop não-bloqueante
+            while True:
+                # get_message com timeout (não-bloqueante)
+                message = pubsub.get_message(timeout=1.0)
+                
+                if message and message['type'] == 'message':
                     last_message_time = time.time()
                     
-                    # Enviar mensagem ao cliente
                     yield {
                         "event": "message",
                         "data": message["data"]
                     }
                     
-                    logger.debug(
-                        "sse_message_sent",
-                        execucao_id=execucao_id,
-                        data_preview=message["data"][:100]
-                    )
+                    logger.debug("sse_message_sent", execucao_id=execucao_id)
                 
-                # Keepalive - enviar comentário a cada 15s
+                # Keepalive
                 elif time.time() - last_message_time > keepalive_interval:
                     yield {
                         "event": "ping",
                         "data": json.dumps({"type": "keepalive", "timestamp": time.time()})
                     }
                     last_message_time = time.time()
-                    logger.debug("sse_keepalive_sent", execucao_id=execucao_id)
+                
+                # Liberar event loop
+                await asyncio.sleep(0.1)
                     
         except Exception as e:
-            logger.error(
-                "sse_stream_error",
-                execucao_id=execucao_id,
-                error=str(e),
-                exc_info=True
-            )
+            logger.error("sse_stream_error", execucao_id=execucao_id, error=str(e), exc_info=True)
             yield {
                 "event": "error",
                 "data": json.dumps({"type": "error", "message": str(e)})

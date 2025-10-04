@@ -59,16 +59,46 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
     config = ConfigExecucao(**config_dict)
 
     def update_status(etapa: str, progresso: int, detalhes: str = ""):
+        """CORRIGIDO: Adiciona logging detalhado e tratamento de erros."""
+        logger.info(
+            "attempting_status_update",
+            execucao_id=execucao_id,
+            arquivo=arquivo_nome,
+            etapa=etapa,
+            progresso=progresso
+        )
+        
         try:
-            publish_status_update(execucao_id, {
+            message = {
                 "type": "file_progress",
                 "arquivo": arquivo_nome,
                 "etapa_atual": etapa,
                 "progresso_percentual": progresso,
                 "detalhes": detalhes,
-            })
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Testar conexão Redis antes de publicar
+            redis_conn.ping()
+            
+            # Publicar mensagem
+            publish_status_update(execucao_id, message)
+            
+            logger.info(
+                "status_update_published",
+                execucao_id=execucao_id,
+                arquivo=arquivo_nome,
+                progresso=progresso
+            )
+            
         except Exception as e:
-            logger.warning("status_update_failed", erro=str(e))
+            logger.error(
+                "status_update_failed",
+                execucao_id=execucao_id,
+                arquivo=arquivo_nome,
+                erro=str(e),
+                exc_info=True
+            )
 
     try:
         update_status("Iniciando", 5, "Extraindo metadados...")
@@ -102,7 +132,7 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             "status_juridico": "pendente",
             "status_linguistico": "pendente",
             "config": config_modelos,
-            "llms_usados": {},  # NOVO: Rastreamento de LLMs
+            "llms_usados": {},
             "metricas": {"compositor": {}, "custo_total": 0.0},
         }
 
@@ -110,9 +140,9 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         config_exec = {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
         update_status("Processando Workflow", 20, "Iniciando composição...")
 
-        # NOVO: Callback para monitorar ciclos e salvar outputs intermediários
+        # Callback para monitorar ciclos e salvar outputs intermediários
         ciclos_salvos = []
-        estado_acumulado = initial_state.copy()  # Manter estado completo
+        estado_acumulado = initial_state.copy()
         
         async def _run_workflow():
             nonlocal estado_acumulado
@@ -122,32 +152,38 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                 builder = criar_workflow(config.num_ciclos)
                 graph = builder.compile(checkpointer=saver)
                 
-                # Executar e monitorar
                 last_ciclo = 1
+                step_count = 0  # CORRIGIDO: Contador de steps
+                
                 async for state in graph.astream(initial_state, config_exec):
-                    # Atualizar estado acumulado com os deltas
+                    step_count += 1  # CORRIGIDO: Incrementar contador
+                    
+                    # CORRIGIDO: Atualizar progresso a cada 3 steps
+                    if step_count % 3 == 0:
+                        progresso = min(20 + (step_count * 2), 95)
+                        update_status(
+                            f"Processando step {step_count}",
+                            progresso,
+                            f"Ciclo {last_ciclo} em andamento"
+                        )
+                    
                     if isinstance(state, dict):
                         for key, value in state.items():
                             if isinstance(value, dict):
-                                # Merge do estado
                                 estado_acumulado.update(value)
                                 
-                                # Detectar mudança de ciclo
                                 if 'ciclo_atual' in value:
                                     current_ciclo = value['ciclo_atual']
                                     
-                                    # Se mudou de ciclo, salvar o ciclo anterior
                                     if current_ciclo > last_ciclo and last_ciclo not in ciclos_salvos:
-                                        # Salvar output do ciclo que acabou de terminar
                                         await salvar_output_ciclo(
                                             html_path, metadados, config, 
-                                            estado_acumulado,  # Usar estado acumulado
-                                            last_ciclo,  # Ciclo que terminou
+                                            estado_acumulado,
+                                            last_ciclo,
                                             execucao_id
                                         )
                                         ciclos_salvos.append(last_ciclo)
                                         
-                                        # Update progress
                                         progresso = 20 + (last_ciclo * 60 // config.num_ciclos)
                                         update_status(
                                             f"Ciclo {last_ciclo} concluído",
@@ -157,7 +193,6 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                                     
                                     last_ciclo = current_ciclo
                 
-                # Retornar estado final acumulado
                 return estado_acumulado
         
         async def salvar_output_ciclo(html_path, metadados, config, state, ciclo, exec_id):
@@ -165,15 +200,12 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             output_nome = gerar_nome_saida(
                 html_path, metadados.topico, config.radical, config.id_estilo
             )
-            # Adicionar sufixo do ciclo
             output_nome = output_nome.replace('.json', f'_c{ciclo}.json')
             output_path = OUTPUTS_DIR / output_nome
             
-            # Extrair LLMs usados neste ciclo
             llms_ciclo = state.get('llms_usados', {}).get(f'ciclo_{ciclo}', [])
             letra_atual = state.get('letra_atual', '')
             
-            # Logging de debug
             logger.info(
                 "salvando_ciclo",
                 ciclo=ciclo,
@@ -203,18 +235,17 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                     "metricas": state.get("metricas", {}),
                 }, f, ensure_ascii=False, indent=2)
             
-            logger.info(f"output_ciclo_salvo", ciclo=ciclo, arquivo=output_nome)
+            logger.info("output_ciclo_salvo", ciclo=ciclo, arquivo=output_nome)
 
         resultado = asyncio.run(_run_workflow())
 
-        # Salvar output final do último ciclo (se ainda não foi salvo)
+        # Salvar output final do último ciclo
         ultimo_ciclo = config.num_ciclos
         if ultimo_ciclo not in ciclos_salvos:
             output_nome = gerar_nome_saida(html_path, metadados.topico, config.radical, config.id_estilo)
             output_nome_final = output_nome.replace('.json', f'_c{ultimo_ciclo}.json')
             output_path = OUTPUTS_DIR / output_nome_final
             
-            # Extrair LLMs usados no último ciclo
             llms_ciclo = resultado.get('llms_usados', {}).get(f'ciclo_{ultimo_ciclo}', [])
             
             with open(output_path, "w", encoding="utf-8") as f:
@@ -239,26 +270,38 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
 
         update_status("Concluído", 100, f"Outputs gerados: {len(ciclos_salvos) + 1} ciclos")
         
-        # Lista de todos os outputs gerados
         outputs_gerados = [
             output_nome.replace('.json', f'_c{i}.json') 
             for i in range(1, config.num_ciclos + 1)
         ]
         
+        # CORRIGIDO: Publicar resultado final
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
             "status": "concluido",
             "output_gerado": ", ".join(outputs_gerados),
+            "timestamp": datetime.now().isoformat()
         })
+        
+        logger.info(
+            "task_completed",
+            arquivo=arquivo_nome,
+            outputs=outputs_gerados
+        )
+        
         return {"sucesso": True, "outputs": outputs_gerados}
         
     except Exception as e:
         logger.error("celery_task_failed", arquivo=arquivo_nome, erro=str(e), exc_info=True)
+        
+        # CORRIGIDO: Publicar erro
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
             "status": "falha",
             "erro": str(e),
+            "timestamp": datetime.now().isoformat()
         })
+        
         return {"sucesso": False, "erro": str(e)}

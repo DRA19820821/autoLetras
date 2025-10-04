@@ -103,7 +103,9 @@ ANÁLISE:
 
 Resposta:
 - Lista de problemas encontrados, caso existam, e a respectiva sugestão de correção.
-Seja técnico e objetivo. Liste apenas problemas concretos."""
+Seja técnico e objetivo. Liste apenas problemas concretos.
+Se nenhum problema for encontrado, a lista deve estar vazia.
+"""
 
 REVISOR_JURIDICO_PROMPT = """Valide a precisão dos conceitos jurídicos na letra educativa abaixo.
 
@@ -181,7 +183,6 @@ METODOLOGIA DE VALIDAÇÃO:
 
 2. CONFORMIDADE DE FORMATAÇÃO:
 - Ausência total de indicações técnicas (Verso, Refrão, Bridge)
-- Sem direções musicais ou marcações entre parênteses
 - Apenas texto corrido com estrofes
 - Presença de título
 
@@ -191,12 +192,12 @@ METODOLOGIA DE VALIDAÇÃO:
 - Fluidez e musicalidade mantidas
 
 4. QUALIDADE LINGUÍSTICA:
-- Ortografia correta
-- Gramática adequada
+- Ortografia correta, sem erros GRAVES, não precisa estar perfeita. 
+- Gramática adequada, sem erros GRAVES, não precisa estar perfeita. 
 - Ausência de palavras inventadas apenas para rimar
 - Coerência e coesão textual
 
-5. APONTE OS PROBLEMAS A SEREM CORRIGIDOS, SEGUIDOS DE UMA SUGESTÃO DE CORREÇÃO.
+5. Liste os erros encontrados, seguidos de uma sugestão de correção.
 CASO NÃO HAJA PROBLEMAS, A LISTA DEVE ESTAR VAZIA."""
 
 REVISOR_LINGUISTICO_PROMPT = """Valide a letra de música educativa abaixo, verificando se atende a todos os critérios estabelecidos para uso no Suno.com.
@@ -210,16 +211,14 @@ LETRA A SER VALIDADA:
 CHECKLIST PRIORITÁRIO:
 1. Adaptações fonéticas: Todas as siglas, números e termos técnicos foram adaptados corretamente?
 2. Formatação limpa: Há alguma indicação técnica proibida (Verso, Refrão, etc.)?
-3. Menção obrigatória: "Academia do Raciocínio" aparece na letra?
-4. Qualidade textual: Existem erros ortográficos, gramaticais ou palavras inventadas inadequadamente?
+3. Menção obrigatória: "Academia do Raciocínio" aparece na letra (pelo menos 3 vezes)?
+4. Qualidade textual: Existem erros ortográficos e gramaticais GRAVES ou palavras inventadas inadequadamente?
 5. Rimas forçadas: Identificar rimas forçadas com palavras inventadas
 
 AÇÃO ESPERADA:
-Forneça uma análise completa seguindo o formato estabelecido, atentando-se a:
+Forneça uma análise seguindo o formato estabelecido, atentando-se a:
 - Adaptações fonéticas (fundamental para o Suno.com)
-- Formatação (qualquer indicação técnica invalida a letra)
 
-Se houver problemas, indique EXATAMENTE onde estão e como corrigi-los.
 Em sua resposta, aponte apenas os problemas e como corrigi-los.
 CASO NÃO HAJA PROBLEMAS, A LISTA DEVE ESTAR VAZIA.
 """
