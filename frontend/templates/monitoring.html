@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <!-- Debug (pode remover em produção) -->
+    <!-- Debug -->
     <div class="mt-6 bg-gray-100 rounded-lg p-4">
         <h4 class="font-semibold mb-2 text-sm">Debug - Últimas Mensagens:</h4>
         <div id="debugMessages" class="text-xs font-mono space-y-1 max-h-32 overflow-y-auto"></div>
@@ -74,14 +74,13 @@
     const progressBar = document.getElementById('progressBar');
     const debugMessages = document.getElementById('debugMessages');
     
-    // Funções auxiliares
     function addDebugMessage(msg) {
         const line = document.createElement('div');
-        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        const timestamp = new Date().toLocaleTimeString();
+        line.textContent = `[${timestamp}] ${msg}`;
         debugMessages.appendChild(line);
         debugMessages.scrollTop = debugMessages.scrollHeight;
         
-        // Manter apenas últimas 20 mensagens
         while (debugMessages.children.length > 20) {
             debugMessages.removeChild(debugMessages.firstChild);
         }
@@ -129,12 +128,13 @@
         const badge = fileElement.querySelector('.status-badge');
         
         if (data.type === 'file_progress') {
-            // Atualizar progresso
+            // CORRIGIDO: Atualizar elementos
             if (etapaText) {
                 etapaText.textContent = data.etapa_atual || 'Processando...';
             }
             if (progressBarEl) {
-                progressBarEl.style.width = `${data.progresso_percentual || 0}%`;
+                const progresso = data.progresso_percentual || 0;
+                progressBarEl.style.width = `${progresso}%`;
                 progressBarEl.className = `progress-bar h-1.5 rounded-full transition-all duration-500 ${getProgressBarClass('processando')}`;
             }
             if (badge) {
@@ -142,10 +142,15 @@
                 badge.textContent = 'Processando';
             }
             
-            addDebugMessage(`📊 ${data.arquivo}: ${data.progresso_percentual}% - ${data.etapa_atual}`);
+            // CORRIGIDO: Atualizar barra geral também
+            const progresso = data.progresso_percentual || 0;
+            progressBar.style.width = `${progresso}%`;
+            geralProgresso.textContent = `Progresso: ${progresso}%`;
+            geralStatus.textContent = 'Processando...';
+            
+            addDebugMessage(`📊 ${data.arquivo}: ${progresso}% - ${data.etapa_atual}`);
             
         } else if (data.type === 'file_result') {
-            // Resultado final
             const status = data.status;
             
             if (etapaText) {
@@ -160,6 +165,13 @@
             if (badge) {
                 badge.className = `badge ${getBadgeClass(status)} text-xs status-badge`;
                 badge.textContent = status === 'concluido' ? 'Concluído' : 'Falha';
+            }
+            
+            // CORRIGIDO: Atualizar status geral
+            if (status === 'concluido') {
+                progressBar.style.width = '100%';
+                geralProgresso.textContent = 'Progresso: 100%';
+                geralStatus.textContent = 'Concluído!';
             }
             
             addDebugMessage(`${status === 'concluido' ? '✅' : '❌'} ${data.arquivo}: ${status}`);
@@ -189,11 +201,12 @@
                 const data = JSON.parse(event.data);
                 addDebugMessage(`📨 Received: ${data.type}`);
                 
+                console.log('SSE:', data); // Debug no console
+                
                 if (data.type === 'file_progress' || data.type === 'file_result') {
                     updateFileStatus(data);
                     
                 } else if (data.type === 'full_status') {
-                    // Status completo inicial
                     if (data.payload && data.payload.arquivos) {
                         data.payload.arquivos.forEach(arquivo => {
                             updateFileStatus({
@@ -206,7 +219,6 @@
                     }
                     
                 } else if (data.type === 'geral_status') {
-                    // Status geral da execução
                     geralStatus.textContent = data.status || 'Processando';
                     if (data.progresso_percentual !== undefined) {
                         geralProgresso.textContent = `Progresso: ${data.progresso_percentual}%`;
@@ -227,7 +239,6 @@
             
             eventSource.close();
             
-            // Tentar reconectar
             if (reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
@@ -251,12 +262,6 @@
             eventSource.close();
         }
     });
-    
-    // Botão para reconectar manualmente (adicionar se necessário)
-    window.reconnectSSE = function() {
-        reconnectAttempts = 0;
-        connectSSE();
-    };
     
 })();
 </script>
