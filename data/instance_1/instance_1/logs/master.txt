@@ -1,0 +1,13 @@
+[2m2025-10-10T11:13:24.716527Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T11:13:24.717348Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:13:29.836719Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:13:44.495760Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T11:13:44.497391Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:13:49.519893Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:14:04.067046Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T11:14:04.067807Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:24:57.847242Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_112457[0m [36mnum_files[0m=[35m8[0m
+[2m2025-10-10T11:24:58.252154Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_112457[0m [36mexecucao_id[0m=[35m20251010_112457[0m
+[2m2025-10-10T11:56:24.003111Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T11:56:24.004043Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T11:56:46.386175Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m

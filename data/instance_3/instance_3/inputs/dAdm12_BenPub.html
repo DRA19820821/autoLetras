@@ -1,0 +1,729 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direito Administrativo Brasileiro - Bens Públicos - Guia Completo para Concursos</title>
+    <meta name="description" content="Guia completo de Direito Administrativo - Bens Públicos para concursos públicos brasileiros, com teoria, questões comentadas e estratégias de estudo.">
+    <meta name="keywords" content="concurso público, direito administrativo, bens públicos, estudo, preparação, questões comentadas, afetação, desafetação, usucapião de bem público">
+    <meta name="author" content="Professor Especialista em Concursos">
+    <meta property="og:title" content="Direito Administrativo - Bens Públicos - Guia Definitivo">
+    <meta property="og:description" content="Material completo com teoria, jurisprudência, questões e estratégias para sua aprovação no tema Bens Públicos.">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="pt_BR">
+    <style>
+        /* Redefinição e estilos base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* Contêiner principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Cabeçalho e títulos */
+        h1 {
+            color: #1e3a5f;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #2c5282;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            padding-left: 10px;
+            font-size: 1.8rem;
+        }
+        
+        h3 {
+            color: #3a5f8a;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        /* Navegação */
+        nav {
+            background: #1e3a5f;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+        }
+
+        .nav-menu li {
+            margin-left: 20px;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #5dade2;
+        }
+        
+        /* Caixas especiais */
+        .destaque-importante {
+            background: #e8f4fd;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .box-memorizacao {
+            background: #f0f9ff;
+            border: 2px dashed #5dade2;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .alerta-pegadinha {
+            background: #fff5f5;
+            border-left: 5px solid #e53e3e;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .questao-comentada {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .gabarito {
+            background: #e6fffa;
+            color: #234e52;
+            border: 1px solid #38b2ac;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .caso-pratico {
+            background: #fffbeb;
+            border-left: 5px solid #f6e05e;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        
+        .dica-ouro {
+            background: linear-gradient(135deg, #1e3a5f 0%, #3498db 100%);
+            color: white;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #2c5282;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        /* Listas especiais */
+        ul.checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        ul.checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        ul.checklist li:before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        
+        /* Citações e destaques */
+        blockquote {
+            border-left: 5px solid #5dade2;
+            padding-left: 20px;
+            margin: 25px 0;
+            font-style: italic;
+            color: #555;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 5px;
+        }
+        
+        .sumula {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .artigo-lei {
+            background: #fafafa;
+            border-left: 3px solid #757575;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 5px;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.6rem; }
+            .nav-menu { display: none; } /* Simplificando para o exemplo */
+        }
+        
+        @media (max-width: 480px) {
+            body { font-size: 15px; }
+            .destaque-importante, .box-memorizacao, .alerta-pegadinha { padding: 15px; }
+        }
+        
+        /* Índice/Sumário */
+        .indice {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+        
+        .indice h3 {
+            margin-top: 0;
+            color: #1e3a5f;
+        }
+
+        .indice ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .indice ul li {
+            margin-bottom: 10px;
+        }
+
+        .indice a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .indice a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <h2 style="margin: 0; color: white; font-size: 1.5rem;">Direito Administrativo - Bens Públicos</h2>
+            <ul class="nav-menu">
+                <li><a href="#fundamentacao">Fundamentação</a></li>
+                <li><a href="#memorizacao">Memorização</a></li>
+                <li><a href="#pegadinhas">Pegadinhas</a></li>
+                <li><a href="#questoes">Questões</a></li>
+                <li><a href="#resumo">Resumo</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <header>
+            <h1>GUIA DEFINITIVO: BENS PÚBLICOS</h1>
+        </header>
+
+        <main>
+            <section id="introducao">
+                <p>Sabe aquela praça perto da sua casa, onde você passeia com a família? E a praia que você foi nas últimas férias? Ou até mesmo o prédio da Receita Federal onde um parente seu trabalha? Todos eles são <strong>bens públicos</strong>. Mas, e se eu te disser que, para o Direito Administrativo, a praça, a praia e o prédio da Receita são tratados de formas completamente diferentes? A praça e a praia, em regra, não podem ser vendidas. Já um prédio público desativado, sob certas condições, pode! É exatamente nessas diferenças que as bancas de concurso elaboram suas questões mais capciosas. Nosso objetivo aqui é desvendar cada detalhe desse regime jurídico especial para que você nunca mais confunda um bem de uso comum com um bem dominical. Vamos juntos dominar esse tema!</p>
+            </section>
+
+            <aside class="indice">
+                <h3>Navegue pelo conteúdo:</h3>
+                <ul>
+                    <li><a href="#fundamentacao">1. Fundamentação Teórica Completa</a></li>
+                    <li><a href="#memorizacao">2. Estratégias de Memorização</a></li>
+                    <li><a href="#pegadinhas">3. Armadilhas e Pegadinhas de Prova</a></li>
+                    <li><a href="#questoes">4. Questões Comentadas de Concursos</a></li>
+                    <li><a href="#resumo">5. Resumo Estratégico</a></li>
+                    <li><a href="#pratica">6. Aplicação Prática em Casos Concretos</a></li>
+                </ul>
+            </aside>
+
+            <section id="fundamentacao">
+                <h2>1. Fundamentação Teórica Completa</h2>
+                
+                <h3>a) Conceitos Fundamentais</h3>
+                <p>Bens públicos, em uma primeira análise, são todos os bens, móveis ou imóveis, que pertencem às pessoas jurídicas de direito público – União, Estados, Distrito Federal e Municípios –, bem como às suas autarquias e fundações públicas de direito público. O que os torna especiais não é apenas a titularidade, mas o <strong>regime jurídico de direito público</strong> a que estão submetidos, um conjunto de regras e prerrogativas que os diferenciam dos bens particulares.</p>
+                
+                <blockquote>
+                    <p>"Bens públicos, em sentido amplo, são todas as coisas, corpóreas ou incorpóreas, imóveis, móveis e semoventes, créditos, direitos e ações, que pertençam, a qualquer título, às entidades estatais, autárquicas, fundacionais e paraestatais."</p>
+                    <footer>— Hely Lopes Meirelles, em "Direito Administrativo Brasileiro"</footer>
+                </blockquote>
+
+                <p>A doutrina majoritária, representada por autores como <strong>Maria Sylvia Zanella Di Pietro</strong> e <strong>Celso Antônio Bandeira de Mello</strong>, destaca que o critério para definir um bem como público é o da titularidade, ou seja, pertencer a uma pessoa jurídica de direito público. Contudo, a finalidade (a afetação a um interesse público) é o que justifica o regime jurídico especial.</p>
+
+                <div class="destaque-importante">
+                    <strong>Atenção:</strong> Bens de empresas públicas e sociedades de economia mista que exploram atividade econômica são, em regra, regidos pelo direito privado (art. 173, § 1º, II, CF/88). No entanto, aqueles bens que estiverem diretamente afetados à prestação de um serviço público submetem-se, parcialmente, ao regime de direito público (ex: impenhorabilidade). Esse é um ponto de grande controvérsia e muito explorado em provas!
+                </div>
+
+                <h4>Princípios Norteadores e Características Gerais</h4>
+                <p>O regime jurídico especial dos bens públicos é marcado por um conjunto de prerrogativas que visam proteger o patrimônio que serve a toda a coletividade. As principais características são:</p>
+                
+                <ul>
+                    <li><strong>Inalienabilidade (ou Alienabilidade Condicionada):</strong> A regra é que os bens públicos não podem ser vendidos. No entanto, essa regra não é absoluta. Como veremos, os bens dominicais podem ser alienados, desde que preenchidos os requisitos legais. Por isso, o termo mais técnico é "alienabilidade condicionada".</li>
+                    <li><strong>Impenhorabilidade:</strong> Os bens públicos não podem ser objeto de penhora, arresto ou sequestro para pagamento de dívidas do Estado. As dívidas judiciais da Fazenda Pública são pagas por meio do sistema de precatórios (art. 100, CF/88).</li>
+                    <li><strong>Imprescritibilidade (Não sujeição à Usucapião):</strong> Bens públicos não podem ser adquiridos por usucapião (prescrição aquisitiva). Não importa quanto tempo alguém ocupe um bem público, essa posse nunca se converterá em propriedade.</li>
+                    <li><strong>Não Onerabilidade:</strong> Em regra, não se pode instituir direitos reais de garantia (como hipoteca ou penhor) sobre bens públicos.</li>
+                </ul>
+
+                <h3>b) Desenvolvimento Aprofundado: Classificação dos Bens Públicos</h3>
+                <p>A classificação dos bens públicos é, sem dúvida, o coração do tema e o ponto mais cobrado em concursos. O Código Civil, em seu artigo 99, traz a classificação legal:</p>
+
+                <div class="artigo-lei">
+                    <strong>Art. 99 do Código Civil:</strong> São bens públicos:<br>
+                    I - os de uso comum do povo, tais como rios, mares, estradas, ruas e praças;<br>
+                    II - os de uso especial, tais como edifícios ou terrenos destinados a serviço ou estabelecimento da administração federal, estadual, territorial ou municipal, inclusive os de suas autarquias;<br>
+                    III - os dominicais, que constituem o patrimônio das pessoas jurídicas de direito público, como objeto de direito pessoal, ou real, de cada uma dessas entidades.
+                </div>
+
+                <p>Vamos detalhar cada um deles em uma tabela para facilitar a visualização e a memorização.</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Conceito e Exemplos</th>
+                            <th>Uso</th>
+                            <th>Afetação</th>
+                            <th>Alienação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Bens de Uso Comum do Povo</strong></td>
+                            <td>Aqueles que podem ser utilizados por qualquer pessoa, sem necessidade de permissão especial. Ex: praças, ruas, praias, rios navegáveis.</td>
+                            <td>Uso geral e indiscriminado pela coletividade. Pode ser gratuito ou oneroso (ex: pedágio em rodovia).</td>
+                            <td><strong>Afetados.</strong> Têm uma destinação pública direta.</td>
+                            <td><strong>Inalienáveis</strong> enquanto conservarem essa qualificação.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bens de Uso Especial</strong></td>
+                            <td>Aqueles utilizados pela própria Administração Pública para a prestação de serviços públicos. Ex: prédios de repartições, hospitais públicos, escolas públicas, viaturas policiais.</td>
+                            <td>Uso restrito à finalidade pública a que se destinam. O público pode até ter acesso (hospital), mas o bem serve ao aparelho estatal.</td>
+                            <td><strong>Afetados.</strong> Têm uma destinação pública específica.</td>
+                            <td><strong>Inalienáveis</strong> enquanto estiverem afetados a um serviço público.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bens Dominicais (ou Dominiais)</strong></td>
+                            <td>São os bens que não possuem uma destinação pública definida. Constituem o "patrimônio disponível" do Estado. Ex: terras devolutas, prédios públicos desativados, terrenos sem utilização.</td>
+                            <td>Não têm uso público direto. O Estado os possui como um particular possui seus bens.</td>
+                            <td><strong>Desafetados.</strong> Não estão vinculados a nenhuma finalidade pública.</td>
+                            <td><strong>Alienáveis</strong>, observadas as exigências da lei (interesse público, avaliação prévia, licitação, etc.).</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Afetação e Desafetação: A Chave de Tudo</h4>
+                <p>Percebeu como a palavra "afetação" apareceu o tempo todo? Ela é a chave para entender a dinâmica dos bens públicos.</p>
+                <ul>
+                    <li><strong>Afetação:</strong> É o ato ou fato pelo qual um bem público passa a ter uma destinação pública específica, seja de uso comum ou especial. Um terreno vazio (dominical) que se torna uma praça (uso comum) foi <strong>afetado</strong>.</li>
+                    <li><strong>Desafetação:</strong> É o processo inverso. Um bem deixa de servir a uma finalidade pública e passa à categoria de dominical. Uma escola pública (uso especial) que é desativada e fica sem uso se torna um bem <strong>desafetado</strong> (dominical), e só então poderá ser vendida.</li>
+                </ul>
+                <p>A desafetação pode ocorrer por ato administrativo (decreto, lei) ou por fato natural (um rio que seca e deixa de ser navegável). É a desafetação que retira a inalienabilidade do bem.</p>
+
+                <h3>c) Base Legal e Jurisprudencial</h3>
+                <p>A base normativa do tema é concisa, mas fundamental. Você PRECISA dominar estes artigos:</p>
+                
+                <h4>Constituição Federal de 1988</h4>
+                <div class="artigo-lei">
+                    <strong>Art. 20:</strong> Lista os bens da União (ex: mar territorial, recursos minerais, terras indígenas, terrenos de marinha).<br>
+                    <strong>Art. 26:</strong> Lista os bens dos Estados (ex: águas superficiais ou subterrâneas, ilhas fluviais e lacustres que não pertençam à União, terras devolutas não compreendidas entre as da União).<br>
+                    <strong>Art. 183, § 3º e Art. 191, parágrafo único:</strong> Estabelecem expressamente que os imóveis públicos não serão adquiridos por usucapião.
+                </div>
+                
+                <div class="destaque-importante">
+                    <strong>Fique de Olho: Terrenos de Marinha (Art. 20, VII, CF/88)</strong>
+                    <p>Um tipo de bem da União muito cobrado em provas! Não se confunda: não são terrenos da Marinha do Brasil. São áreas situadas na costa marítima, numa faixa de 33 metros para o interior, contados a partir da linha da preamar-média de 1831. O regime de utilização desses terrenos por particulares (aforamento e ocupação) é complexo e gera muitas discussões, mas para a prova, o essencial é saber que são bens públicos da União.</p>
+                </div>
+
+                <h4>Código Civil de 2002</h4>
+                <div class="artigo-lei">
+                    <strong>Art. 98:</strong> Define o que são bens públicos (os que pertencem às pessoas jurídicas de direito público interno).<br>
+                    <strong>Art. 99:</strong> Apresenta a classificação (uso comum, uso especial, dominicais).<br>
+                    <strong>Art. 100:</strong> Estabelece que os bens de uso comum e uso especial são inalienáveis enquanto conservarem sua qualificação.<br>
+                    <strong>Art. 101:</strong> Permite a alienação dos bens dominicais, observadas as exigências legais.<br>
+                    <strong>Art. 102:</strong> Consagra a imprescritibilidade (não sujeição a usucapião).<br>
+                    <strong>Art. 103:</strong> Regula o uso dos bens de uso comum do povo, que pode ser gratuito ou retribuído.
+                </div>
+
+                <h4>Jurisprudência Consolidada</h4>
+                <p>O STJ e o STF têm posicionamentos firmes sobre o tema, consolidados em Súmulas que você precisa memorizar:</p>
+                
+                <div class="sumula">
+                    <strong>Súmula 340 do STJ:</strong> "Desde a vigência do Código Civil de 1916, os bens dominicais, como os demais bens públicos, não podem ser adquiridos por usucapião."
+                </div>
+
+                <div class="sumula">
+                    <strong>Súmula 619 do STJ:</strong> "A ocupação indevida de bem público configura mera detenção, de natureza precária, insuscetível de retenção ou indenização por acessões e benfeitorias."
+                </div>
+
+                <p>Além das súmulas, lembre-se destes entendimentos:</p>
+                <ul>
+                    <li><strong>Bens de Empresas Estatais:</strong> O STF já decidiu (RE 599.628) que os bens da Empresa Brasileira de Correios e Telégrafos (ECT), uma empresa pública que presta serviço público essencial em regime de monopólio, são impenhoráveis, aplicando a eles o regime de precatórios. O raciocínio é estendido a outras estatais em situação similar.</li>
+                    <li><strong>Ocupação de Bem Público:</strong> A jurisprudência, consolidada na Súmula 619 do STJ, é pacífica no sentido de que a ocupação irregular de bem público não gera posse, mas mera <strong>detenção</strong>. Por isso, não há direito à indenização por benfeitorias, nem direito de retenção.</li>
+                </ul>
+
+                <h3>d) Conexões e Diferenciações</h3>
+                <h4>Bens Públicos vs. Bens Privados</h4>
+                <p>A principal diferença não é a titularidade (quem é o dono), mas o <strong>regime jurídico</strong>. Bens privados são regidos pelo Código Civil, com ampla liberdade de alienação, penhorabilidade e sujeição à usucapião. Bens públicos são regidos pelo Direito Administrativo, com as características de inalienabilidade relativa, impenhorabilidade e imprescritibilidade.</p>
+
+                <h4>Formas de Utilização de Bens Públicos por Particulares</h4>
+                <p>O Estado pode permitir que particulares utilizem seus bens. As formas variam conforme a natureza do bem e o interesse público envolvido. É crucial não confundir esses institutos:</p>
+                <ul>
+                    <li><strong>Autorização de Uso:</strong> Ato unilateral, discricionário e precário. Para uso de curta duração e interesse predominantemente do particular (ex: autorização para colocar mesas na calçada). Pode ser revogada a qualquer tempo.</li>
+                    <li><strong>Permissão de Uso:</strong> Ato unilateral, discricionário e precário. Geralmente para atividades de maior relevância (ex: permissão para instalar uma banca de jornal em uma praça). Também pode ser revogada.</li>
+                    <li><strong>Concessão de Uso:</strong> Contrato administrativo, bilateral, que gera direito subjetivo ao concessionário. Para usos mais complexos e de longo prazo, geralmente precedido de licitação (ex: concessão de uso de um restaurante em um parque nacional).</li>
+                    <li><strong>Cessão de Uso:</strong> Transferência da posse de um bem público de um órgão público para outro, ou para uma entidade privada sem fins lucrativos que colabore com o Poder Público.</li>
+                </ul>
+            </section>
+
+            <section id="memorizacao">
+                <h2>2. Estratégias de Memorização</h2>
+                
+                <p>O volume de detalhes pode parecer grande, mas vamos organizar as informações de forma que a memorização seja intuitiva. Esqueça mnemônicos complexos e foque em entender a lógica por trás da classificação.</p>
+
+                <div class="box-memorizacao">
+                    <h3>Mapa Mental Descrito: O Fluxo dos Bens Públicos</h3>
+                    <p>Imagine o patrimônio do Estado como uma grande caixa d'água. Dentro dela, estão todos os bens.</p>
+                    <ol>
+                        <li><strong>O "estoque" (Bens Dominicais):</strong> Pense nos bens dominicais como a água no fundo da caixa, sem uso imediato. É o patrimônio "bruto" do Estado, como um terreno baldio. Ele está lá, disponível. Por estar "parado", pode ser vendido (alienado).</li>
+                        <li><strong>A "torneira" da Afetação:</strong> Quando o Estado decide usar essa "água", ele abre uma torneira. Esse ato é a <strong>AFETAÇÃO</strong>. A água (o bem) ganha uma finalidade.</li>
+                        <li><strong>Os "canos" de destino:</strong>
+                            <ul>
+                                <li><strong>Cano 1 (Uso Comum):</strong> A água vai para uma fonte pública na praça. Todos podem beber. Esse é o <strong>bem de uso comum do povo</strong>.</li>
+                                <li><strong>Cano 2 (Uso Especial):</strong> A água vai para o sistema de refrigeração do prédio da prefeitura. Serve ao próprio Estado. Esse é o <strong>bem de uso especial</strong>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>O "ralo" da Desafetação:</strong> Se a escola pública (uso especial) for fechada, é como se o "cano" fosse desconectado. A água volta para o fundo da caixa d'água, para o "estoque". Esse processo é a <strong>DESAFETAÇÃO</strong>. O bem volta a ser dominical e, só então, pode ser vendido.</li>
+                    </ol>
+                    <p><strong>A lógica é:</strong> Enquanto o bem estiver "em uso" (afetado), seja pelo povo ou pelo Estado, ele é intocável (inalienável). Quando volta para o "estoque" (desafetado), torna-se disponível.</p>
+                </div>
+
+                <h3>Técnica de Associação Visual</h3>
+                <p>Associe cada tipo de bem a uma imagem forte e brasileira:</p>
+                <ul>
+                    <li><strong>Uso Comum do Povo:</strong> Pense na <strong>Praia de Copacabana</strong>. Aberta a todos, uso livre. Você não pode "comprar" um pedaço da praia.</li>
+                    <li><strong>Uso Especial:</strong> Pense no <strong>Palácio do Planalto</strong>. É um prédio público, destinado a um serviço específico (a Presidência da República). Você não pode entrar e usar como quiser.</li>
+                    <li><strong>Bem Dominical:</strong> Pense em um <strong>prédio antigo e abandonado do INSS</strong> no centro de uma cidade. Não tem uso, está desafetado. A prefeitura pode, após os trâmites legais, leiloá-lo para a construção de um empreendimento privado.</li>
+                </ul>
+            </section>
+
+            <section id="pegadinhas">
+                <h2>3. Armadilhas e Pegadinhas de Prova</h2>
+                <p>Aqui é onde separamos os aprovados dos que "quase passaram". As bancas adoram explorar as sutilezas do tema. Fique atento a estes 5 erros clássicos:</p>
+
+                <div class="alerta-pegadinha">
+                    <h4>1. A "Inalienabilidade Absoluta"</h4>
+                    <p><strong>A pegadinha:</strong> A banca afirma que "todos os bens públicos são inalienáveis".<br>
+                    <strong>A realidade:</strong> Falso! A inalienabilidade é a regra for the bens de uso comum e especial <strong>enquanto</strong> afetados. Os bens dominicais são, por natureza, alienáveis, desde que cumpridos os requisitos legais (desafetação, interesse público, avaliação, licitação etc.). O termo correto é <strong>inalienabilidade relativa</strong> ou <strong>alienabilidade condicionada</strong>.</p>
+                    <p><strong>Como a banca cobra (CESPE/CEBRASPE):</strong> "Os bens públicos, em razão do princípio da supremacia do interesse público, são absolutamente inalienáveis." (ERRADO)</p>
+                </div>
+
+                <div class="alerta-pegadinha">
+                    <h4>2. Confundir Posse com Detenção</h4>
+                    <p><strong>A pegadinha:</strong> Afirmar que a ocupação de um bem público por um particular, de forma mansa e pacífica por longo período, gera posse e direitos indenizatórios.<br>
+                    <strong>A realidade:</strong> A jurisprudência consolidada do STJ (Súmula 619) entende que a ocupação de bem público é mera <strong>detenção</strong>, ato de tolerância do Poder Público que não induz posse. Portanto, não há que se falar em direito de retenção ou indenização por benfeitorias, salvo se houver previsão legal ou contratual expressa.</p>
+                    <p><strong>Como a banca cobra (FGV):</strong> "João, de boa-fé, construiu sua casa em terreno público desocupado há 30 anos. Ao ser notificado para desocupar, João terá direito à indenização pela construção, dado o longo tempo de ocupação." (ERRADO)</p>
+                </div>
+
+                <div class="alerta-pegadinha">
+                    <h4>3. Usucapião de Bem Dominical</h4>
+                    <p><strong>A pegadinha:</strong> A banca tenta induzir o candidato ao erro, sugerindo que, por serem alienáveis e se assemelharem a bens privados, os bens dominicais poderiam ser usucapidos.<br>
+                    <strong>A realidade:</strong> A vedação à usucapião é <strong>ABSOLUTA</strong> para todos os bens públicos, sem exceção. A Súmula 340 do STJ e os artigos 183, § 3º, e 191, parágrafo único, da CF, não deixam margem para dúvidas.</p>
+                    <p><strong>Como a banca cobra (FCC):</strong> "Conforme o Código Civil, a imprescritibilidade dos bens públicos não se aplica aos bens dominicais, uma vez que estes não estão afetados a uma finalidade pública." (ERRADO, é a pegadinha clássica da literalidade mal interpretada).</p>
+                </div>
+                
+                <div class="alerta-pegadinha">
+                    <h4>4. Afetação por Fato vs. Ato</h4>
+                    <p><strong>A pegadinha:</strong> A banca limita a afetação a um ato formal da Administração (uma lei ou decreto).<br>
+                    <strong>A realidade:</strong> A afetação pode ocorrer por um ato formal, mas também por um <strong>fato administrativo</strong>. Por exemplo, se a população passa a usar espontaneamente um terreno público como praça por anos, sem oposição do Poder Público, pode-se considerar que aquele bem foi afetado ao uso comum pelo próprio uso. A desafetação, por outro lado, geralmente exige um ato formal.</p>
+                </div>
+
+                <div class="alerta-pegadinha">
+                    <h4>5. Natureza Jurídica dos Bens das Estatais</h4>
+                    <p><strong>A pegadinha:</strong> Generalizar o regime jurídico dos bens de todas as empresas estatais (empresas públicas e sociedades de economia mista).<br>
+                    <strong>A realidade:</strong> A regra é que os bens das estatais que exploram atividade econômica são bens privados. <strong>Exceção:</strong> Se a estatal presta serviço público (ex: Correios, Sabesp), os bens diretamente afetados à prestação desse serviço recebem as garantias do regime público, como a impenhorabilidade. A análise é caso a caso.</p>
+                </div>
+            </section>
+
+            <section id="questoes">
+                <h2>4. Questões Comentadas de Concursos</h2>
+
+                <div class="questao-comentada">
+                    <p><strong>(FGV - 2022 - TJDFT - Analista Judiciário)</strong> A respeito do regime jurídico dos bens públicos, assinale a afirmativa correta.</p>
+                    <p>A) Os bens de uso comum do povo, enquanto guardarem essa afetação, são inalienáveis, mas podem ser adquiridos por usucapião.</p>
+                    <p>B) Os bens de uso especial, como os edifícios onde funcionam os tribunais, são alienáveis, mas impenhoráveis.</p>
+                    <p>C) Os bens dominicais, como as terras devolutas, são inalienáveis, salvo por motivo de relevante interesse público, devidamente justificado.</p>
+                    <p>D) A ocupação de bem público por particular, ainda que por longo período, não induz posse, mas mera detenção, de natureza precária.</p>
+                    <p>E) Os bens das empresas públicas e das sociedades de economia mista são considerados bens públicos para todos os fins de direito.</p>
+                    
+                    <div class="gabarito">
+                        <strong>Gabarito:</strong> D
+                    </div>
+
+                    <p><strong>Comentário passo a passo:</strong></p>
+                    <ul>
+                        <li><strong>Alternativa A (Incorreta):</strong> Nenhum bem público, seja de que espécie for, pode ser adquirido por usucapião. A imprescritibilidade é uma característica de todos os bens públicos (Art. 102, CC e Art. 183, § 3º, CF/88).</li>
+                        <li><strong>Alternativa B (Incorreta):</strong> Bens de uso especial, por estarem afetados a um serviço público, são inalienáveis enquanto mantiverem essa característica (Art. 100, CC). São, de fato, impenhoráveis. O erro está em dizer que são alienáveis.</li>
+                        <li><strong>Alternativa C (Incorreta):</strong> O erro está na premissa. Os bens dominicais são, por natureza, <strong>alienáveis</strong>. A regra para eles é a possibilidade de venda, desde que observadas as formalidades legais. A alternativa inverte o conceito.</li>
+                        <li><strong>Alternativa D (Correta):</strong> Perfeita descrição do entendimento pacífico do STJ (Súmula 619). A ocupação de bem público por particular configura mera detenção, um ato de tolerância do Poder Público, não gerando os direitos inerentes à posse, como a usucapião ou a indenização por benfeitorias (salvo exceções legais).</li>
+                        <li><strong>Alternativa E (Incorreta):</strong> Generalização perigosa. A regra é que os bens das estatais que exploram atividade econômica seguem o regime de direito privado. Apenas os bens afetados à prestação de serviço público recebem certas proteções do regime público, como a impenhorabilidade, mas não são considerados bens públicos em sua essência.</li>
+                    </ul>
+                    <div class="dica-ouro"><strong>Dica da Questão:</strong> A FGV adora cobrar jurisprudência consolidada, especialmente do STJ. O tema "ocupação de bem público = detenção" é um dos favoritos da banca. Memorize isso!</div>
+                </div>
+
+                <div class="questao-comentada">
+                    <p><strong>(CESPE/CEBRASPE - 2021 - SEFAZ/CE - Auditor Fiscal)</strong> A respeito dos bens públicos, julgue o item a seguir.<br>
+                    O processo pelo qual um bem público de uso especial é retirado dessa condição, passando à categoria de bem dominical, é denominado desafetação e, em regra, depende de lei autorizativa.</p>
+                    
+                    <div class="gabarito">
+                        <strong>Gabarito:</strong> Certo
+                    </div>
+
+                    <p><strong>Comentário passo a passo:</strong></p>
+                    <p>A questão descreve perfeitamente o instituto da <strong>desafetação</strong>. É o ato (ou fato) que retira a finalidade pública de um bem, transferindo-o da categoria de uso comum ou especial para a de bem dominical. A regra geral, especialmente para bens imóveis, é que a alienação (e, consequentemente, a desafetação que a precede) depende de autorização legislativa, além de outros requisitos como avaliação prévia e licitação (conforme a Lei 8.666/93, agora substituída pela Lei 14.133/21, que mantém exigências semelhantes no Art. 76).</p>
+                    <div class="dica-ouro"><strong>Dica da Questão:</strong> O CESPE/CEBRASPE testa conceitos precisos. A banca não perguntou se a desafetação é *sempre* por lei, mas se *em regra* depende de lei. Essa nuance torna a afirmativa correta.</div>
+                </div>
+
+                <div class="questao-comentada">
+                    <p><strong>(FCC - 2019 - TRF4 - Técnico Judiciário)</strong> Os bens públicos dominicais</p>
+                    <p>A) são inalienáveis e imprescritíveis.</p>
+                    <p>B) são alienáveis e prescritíveis.</p>
+                    <p>C) são alienáveis, mas imprescritíveis.</p>
+                    <p>D) são inalienáveis, mas prescritíveis.</p>
+                    <p>E) podem ser onerados com garantia real, como a hipoteca.</p>
+
+                    <div class="gabarito">
+                        <strong>Gabarito:</strong> C
+                    </div>
+                    
+                    <p><strong>Comentário passo a passo:</strong></p>
+                    <ul>
+                        <li><strong>Alternativa A (Incorreta):</strong> São imprescritíveis, mas não inalienáveis.</li>
+                        <li><strong>Alternativa B (Incorreta):</strong> São alienáveis, mas não prescritíveis (não podem ser usucapidos).</li>
+                        <li><strong>Alternativa C (Correta):</strong> Exatamente! Os bens dominicais são os únicos que podem ser alienados (vendidos), desde que cumpridos os requisitos legais. No entanto, a característica da imprescritibilidade (impossibilidade de usucapião) se aplica a TODOS os bens públicos, sem exceção.</li>
+                        <li><strong>Alternativa D (Incorreta):</strong> Inverte as duas características.</li>
+                        <li><strong>Alternativa E (Incorreta):</strong> Outra característica dos bens públicos é a não onerabilidade. Eles não podem ser dados em garantia (hipoteca, penhor, anticrese).</li>
+                    </ul>
+                    <div class="dica-ouro"><strong>Dica da Questão:</strong> A FCC é conhecida pela literalidade. Essa questão é uma prova "pura" do conhecimento das características dos bens dominicais. A chave é lembrar: ALIENÁVEL SIM, USUCAPÍVEL NÃO.</div>
+                </div>
+
+                <div class="questao-comentada">
+                    <p><strong>(VUNESP - 2023 - TJ/SP - Escrevente Técnico Judiciário)</strong> De acordo com o Código Civil, são considerados bens públicos de uso especial:</p>
+                    <p>A) Os rios, mares e estradas.</p>
+                    <p>B) As terras devolutas sem destinação.</p>
+                    <p>C) Os edifícios onde estão instaladas as Secretarias Municipais.</p>
+                    <p>D) As praças e ruas de uma cidade.</p>
+                    <p>E) Os veículos apreendidos que se encontram em pátios do DETRAN.</p>
+
+                    <div class="gabarito">
+                        <strong>Gabarito:</strong> C
+                    </div>
+
+                    <p><strong>Comentário passo a passo:</strong></p>
+                    <p>Essa questão testa a memorização da classificação do Art. 99 do Código Civil.</p>
+                    <ul>
+                        <li><strong>Alternativa A (Incorreta):</strong> Rios, mares e estradas são exemplos clássicos de bens de <strong>uso comum do povo</strong>.</li>
+                        <li><strong>Alternativa B (Incorreta):</strong> Terras devolutas são o principal exemplo de bens <strong>dominicais</strong>.</li>
+                        <li><strong>Alternativa C (Correta):</strong> Edifícios utilizados para a prestação de um serviço público (como uma Secretaria Municipal) são o exemplo perfeito de bens de <strong>uso especial</strong>.</li>
+                        <li><strong>Alternativa D (Incorreta):</strong> Praças e ruas são bens de <strong>uso comum do povo</strong>.</li>
+                        <li><strong>Alternativa E (Incorreta):</strong> Veículos apreendidos são bens de terceiros sob custódia do Estado, não são bens públicos. Mesmo que fossem incorporados ao patrimônio, se não tivessem uso, seriam dominicais. A questão é conceitual.</li>
+                    </ul>
+                    <div class="dica-ouro"><strong>Dica da Questão:</strong> A VUNESP costuma ser bem direta e cobrar a letra da lei. Conhecer os exemplos do Art. 99 do CC é fundamental para provas dessa banca.</div>
+                </div>
+
+                <div class="questao-comentada">
+                    <p><strong>(CONSULPLAN - 2023 - TJ/MG - Oficial Judiciário)</strong> A utilização de um bem público por particular, em caráter privativo, mediante contrato administrativo precedido de licitação, com prazo determinado e remuneração, configura-se como:</p>
+                    <p>A) Autorização de uso.</p>
+                    <p>B) Permissão de uso.</p>
+                    <p>C) Concessão de uso.</p>
+                    <p>D) Cessão de uso.</p>
+                    <p>E) Ocupação.</p>
+
+                    <div class="gabarito">
+                        <strong>Gabarito:</strong> C
+                    </div>
+
+                    <p><strong>Comentário passo a passo:</strong></p>
+                    <p>A questão descreve as características de um dos institutos de uso de bem público por particular.</p>
+                    <ul>
+                        <li><strong>A e B (Incorretas):</strong> Autorização e Permissão são atos unilaterais e precários, não contratos. Geralmente, não exigem licitação (embora seja recomendável em alguns casos de permissão).</li>
+                        <li><strong>C (Correta):</strong> A descrição bate perfeitamente com a <strong>concessão de uso</strong>. É um contrato administrativo, bilateral, que confere mais estabilidade ao particular, exige licitação como regra e é oneroso.</li>
+                        <li><strong>D (Incorreta):</strong> Cessão de uso é, em regra, entre entes públicos ou para entidades sem fins lucrativos, e não costuma ser onerosa.</li>
+                        <li><strong>E (Incorreta):</strong> Ocupação é uma situação de fato, muitas vezes irregular, e não um instrumento jurídico formal de utilização.</li>
+                    </ul>
+                    <div class="dica-ouro"><strong>Dica da Questão:</strong> Palavras-chave definem a resposta: "Contrato", "licitação", "prazo determinado". Essas três palavras apontam diretamente para a Concessão de Uso.</div>
+                </div>
+            </section>
+
+            <section id="resumo">
+                <h2>5. Resumo Estratégico</h2>
+                <p>Se a prova fosse amanhã, o que você precisaria ter na ponta da língua? Exatamente isto:</p>
+                
+                <div class="dica-ouro">
+                    <h4>Se você só pudesse decorar 5 coisas:</h4>
+                    <ol>
+                        <li><strong>A Classificação do Art. 99, CC:</strong> Uso Comum (ruas, praias), Uso Especial (repartições, escolas) e Dominicais (terras devolutas, prédios desativados).</li>
+                        <li><strong>A Regra da Alienabilidade:</strong> SÓ os bens dominicais podem ser vendidos. Uso comum e especial são INALIENÁVEIS enquanto afetados.</li>
+                        <li><strong>A Regra da Usucapião:</strong> NENHUM bem público pode ser usucapido. A imprescritibilidade é TOTAL.</li>
+                        <li><strong>O Conceito de Afetação/Desafetação:</strong> Afetar é dar finalidade pública. Desafetar é tirar a finalidade, tornando o bem dominical e, portanto, alienável.</li>
+                        <li><strong>Ocupação Irregular = Detenção:</strong> Ocupar bem público não gera posse nem direito a indenização por benfeitorias, como regra.</li>
+                    </ol>
+                </div>
+                
+                <h4>Checklist para Revisão Véspera de Prova</h4>
+                <ul class="checklist">
+                    <li>Sei a diferença entre bem de uso comum, uso especial e dominical?</li>
+                    <li>Entendi o que é afetação e desafetação?</li>
+                    <li>Lembro que a imprescritibilidade (vedação à usucapião) é absoluta?</li>
+                    <li>Sei que a inalienabilidade é relativa (só se aplica aos bens afetados)?</li>
+                    <li>Compreendi que a impenhorabilidade é a regra e o pagamento se dá por precatório?</li>
+                    <li>Conheço os artigos 98 a 103 do Código Civil?</li>
+                    <li>Decorei as Súmulas 340 e 619 do STJ?</li>
+                </ul>
+
+                <h4>Artigos e Súmulas Imprescindíveis</h4>
+                <ul>
+                    <li><strong>Constituição Federal:</strong> Arts. 20, 26, 183 (§ 3º) e 191 (parágrafo único).</li>
+                    <li><strong>Código Civil:</strong> Arts. 98, 99, 100, 101, 102 e 103.</li>
+                    <li><strong>Súmula 340 do STJ:</strong> "Desde a vigência do Código Civil de 1916, os bens dominicais, como os demais bens públicos, não podem ser adquiridos por usucapião."</li>
+                    <li><strong>Súmula 619 do STJ:</strong> "A ocupação indevida de bem público configura mera detenção, de natureza precária, insuscetível de retenção ou indenização por acessões e benfeitorias."</li>
+                </ul>
+            </section>
+
+            <section id="pratica">
+                <h2>6. Aplicação Prática em Casos Concretos</h2>
+                <p>Vamos ver como essa teoria se aplica em situações reais que poderiam ser o pano de fundo de uma questão discursiva.</p>
+
+                <div class="caso-pratico">
+                    <h4>Caso Concreto 1: A Venda da Escola Abandonada</h4>
+                    <p><strong>Situação:</strong> O Município de "Concursolândia" possuía uma escola municipal no centro da cidade, que foi desativada há 5 anos devido à construção de um novo complexo educacional. O prédio está abandonado, gerando custos de manutenção e problemas de segurança. A prefeitura deseja vender o imóvel para uma construtora que pretende erguer um edifício comercial no local.</p>
+                    <p><strong>Análise e Resolução:</strong></p>
+                    <ol>
+                        <li><strong>Classificação Inicial:</strong> Enquanto funcionava como escola, o prédio era um <strong>bem de uso especial</strong>, pois estava afetado a um serviço público (educação). Como tal, era inalienável.</li>
+                        <li><strong>A Mudança de Status:</strong> Com a desativação e o abandono, o bem deixou de ter uma finalidade pública. Ocorreu uma <strong>desafetação de fato</strong>. Para formalizar e dar segurança jurídica à venda, o ideal é que o Prefeito edite um decreto declarando a desafetação do imóvel.</li>
+                        <li><strong>Nova Classificação:</strong> Após a desafetação, o prédio passa a ser um <strong>bem dominical</strong>.</li>
+                        <li><strong>Procedimento para Alienação:</strong> Agora, como bem dominical, ele pode ser vendido. O Município deverá seguir os seguintes passos, conforme a Lei de Licitações (Lei nº 14.133/2021):
+                            <ul>
+                                <li><strong>Justificar o interesse público</strong> na venda.</li>
+                                <li>Obter <strong>autorização legislativa</strong> da Câmara de Vereadores.</li>
+                                <li>Realizar uma <strong>avaliação prévia</strong> para definir o preço mínimo.</li>
+                                <li>Realizar <strong>licitação</strong>, na modalidade leilão, como regra.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p><strong>Conclusão:</strong> A venda é possível, mas exige a observância de um procedimento administrativo rigoroso, que começa com a desafetação do bem.</p>
+                </div>
+
+                <div class="caso-pratico">
+                    <h4>Caso Concreto 2: A "Posse" na Faixa de Domínio</h4>
+                    <p><strong>Situação:</strong> Maria, há 25 anos, construiu uma pequena casa e uma horta em uma faixa de terra ao lado de uma rodovia federal, dentro da chamada "faixa de domínio", que é uma área de propriedade da União destinada à segurança e expansão da via. O DNIT (Departamento Nacional de Infraestrutura de Transportes) notifica Maria para que desocupe a área em 30 dias, pois será construída uma nova pista no local.</p>
+                    <p><strong>Análise e Resolução:</strong></p>
+                    <ol>
+                        <li><strong>Natureza do Bem:</strong> A faixa de domínio de uma rodovia federal é um <strong>bem público da União</strong>, classificado como <strong>bem de uso especial</strong>, pois está afetado ao serviço de transporte e infraestrutura viária.</li>
+                        <li><strong>Natureza da Ocupação:</strong> A ocupação de Maria, ainda que de longa data e de boa-fé, não constitui posse, mas sim <strong>mera detenção</strong> (Súmula 619 do STJ). O tempo não tem o condão de transformar essa detenção em propriedade.</li>
+                        <li><strong>Usucapião:</strong> Em hipótese alguma Maria poderia pleitear a usucapião do imóvel, pois o Art. 183, § 3º da CF/88 e o Art. 102 do CC vedam expressamente a usucapião de bens públicos.</li>
+                        <li><strong>Indenização por Benfeitorias:</strong> Como regra, por se tratar de detenção precária, Maria não teria direito à indenização pela casa construída, conforme a parte final da Súmula 619 do STJ. O poder público pode determinar a desocupação e a demolição sem dever de indenizar. Em casos de grande apelo social, às vezes são buscadas soluções políticas (como reassentamento), mas juridicamente, o direito não assiste à ocupante.</li>
+                    </ol>
+                    <p><strong>Conclusão:</strong> O DNIT agiu corretamente. A notificação é legal e Maria deverá desocupar a área, não podendo invocar usucapião ou direito de retenção/indenização pela construção.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetElement = document.querySelector(this.getAttribute('href'));
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+```

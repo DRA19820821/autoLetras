@@ -1,0 +1,708 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direito Administrativo - Improbidade Administrativa - Guia Completo para Concursos</title>
+    <meta name="description" content="Guia completo de Direito Administrativo - Improbidade Administrativa para concursos públicos brasileiros, atualizado com a Lei 14.230/2021.">
+    <meta name="keywords" content="concurso público, direito administrativo, improbidade administrativa, estudo, preparação, questões comentadas, Lei 8.429/92, Lei 14.230/2021">
+    <meta name="author" content="Professor Especialista em Concursos">
+    <meta property="og:title" content="Direito Administrativo - Improbidade Administrativa - Guia Definitivo">
+    <meta property="og:description" content="Material completo com teoria, questões e estratégias para sua aprovação em Improbidade Administrativa.">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="pt_BR">
+    <style>
+        /* Redefinição e estilos base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            line-height: 1.7;
+        }
+        
+        /* Contêiner principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Cabeçalho e títulos */
+        h1 {
+            color: #1e3a5f;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #2c5282;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            padding-left: 10px;
+            font-size: 1.8rem;
+        }
+        
+        h3 {
+            color: #3a5f8a;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        h4 {
+            color: #4a6a9b;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        /* Navegação */
+        nav {
+            background: #1e3a5f;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-container h2 {
+            margin: 0;
+            color: white;
+            border: none;
+            padding: 0;
+            font-size: 1.5rem;
+        }
+        
+        /* Caixas especiais */
+        .destaque-importante {
+            background: #e8f4fd;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin: 25px 0;
+            font-size: 1.1rem;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .box-memorizacao {
+            background: #f0f9ff;
+            border: 2px dashed #5dade2;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .alerta-pegadinha {
+            background: #fff5f5;
+            border-left: 5px solid #e53e3e;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .questao-comentada {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .gabarito {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .caso-pratico {
+            background: #fffbeb;
+            border: 1px solid #f9ca24;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .dica-ouro {
+            background: linear-gradient(135deg, #1e3a5f 0%, #3498db 100%);
+            color: white;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            font-size: 1.1rem;
+        }
+        
+        /* Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #2c5282;
+            color: white;
+            font-size: 1.1rem;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        tr:hover {
+            background: #e9ecef;
+        }
+
+        /* Listas especiais */
+        ul.checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        ul.checklist li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        ul.checklist li:before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            top: 5px;
+        }
+        
+        /* Citações e destaques */
+        blockquote {
+            border-left: 4px solid #5dade2;
+            padding-left: 20px;
+            margin: 20px 0;
+            font-style: italic;
+            color: #555;
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+        }
+        
+        .sumula {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .artigo-lei {
+            background: #eeeeee;
+            border-left: 3px solid #757575;
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        /* Índice/Sumário */
+        .indice {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+        
+        .indice ul {
+            list-style: none;
+        }
+
+        .indice li {
+            margin-bottom: 10px;
+        }
+
+        .indice a {
+            color: #1e3a5f;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        
+        .indice a:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.6rem; }
+            table { font-size: 14px; display: block; overflow-x: auto; }
+        }
+        
+        @media (max-width: 480px) {
+            body { font-size: 15px; }
+            .destaque-importante, .box-memorizacao, .alerta-pegadinha { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <h2>Direito Administrativo | Improbidade</h2>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <header>
+            <h1>Guia Definitivo: Improbidade Administrativa para Concursos</h1>
+        </header>
+
+        <section id="introducao">
+            <p>Sabe quando você lê no jornal sobre um político que usou dinheiro público para uma festa particular ou um servidor que direcionou uma licitação para a empresa do cunhado? Esses são exemplos clássicos que nos levam diretamente ao coração do nosso tema de hoje: a <strong>Improbidade Administrativa</strong>. Longe de ser um conceito abstrato, a improbidade é a ferramenta jurídica que o Estado brasileiro utiliza para combater a corrupção e a desonestidade na gestão da coisa pública. Dominar este tópico não é apenas crucial para sua aprovação, mas também para entender como se protege o dinheiro que sai do seu bolso. E atenção: a lei mudou drasticamente em 2021, e as bancas estão famintas por cobrar essas novidades. Vamos juntos desvendar cada detalhe!</p>
+        </section>
+
+        <aside class="indice">
+            <h3>Navegue pelo conteúdo:</h3>
+            <ul>
+                <li><a href="#fundamentacao">1. Fundamentação Teórica Completa</a></li>
+                <li><a href="#memorizacao">2. Estratégias de Memorização</a></li>
+                <li><a href="#pegadinhas">3. Armadilhas e Pegadinhas de Prova</a></li>
+                <li><a href="#questoes">4. Questões Comentadas</a></li>
+                <li><a href="#resumo">5. Resumo Estratégico</a></li>
+                <li><a href="#pratica">6. Aplicação Prática</a></li>
+            </ul>
+        </aside>
+
+        <section id="fundamentacao">
+            <h2>1. Fundamentação Teórica Completa</h2>
+            
+            <h3>a) Conceitos Fundamentais</h3>
+            <p>A Improbidade Administrativa pode ser definida como a <strong>conduta desonesta</strong>, praticada por agente público ou terceiro, que causa dano ao patrimônio público, gera enriquecimento ilícito ou viola os princípios da Administração Pública.</p>
+            
+            <blockquote>
+                Para a mestra <strong>Maria Sylvia Zanella Di Pietro</strong>, a improbidade administrativa "é a designação técnica para a chamada corrupção administrativa, que, sob diversas formas, promove o desvirtuamento da Administração Pública e de seus agentes, atentando contra os princípios da moralidade, da impessoalidade e da legalidade".
+            </blockquote>
+            
+            <p>Outros grandes nomes do Direito Administrativo, como <strong>Celso Antônio Bandeira de Mello</strong> e <strong>Hely Lopes Meirelles</strong>, também tratam do tema, sempre associando a improbidade a uma violação qualificada dos deveres de honestidade e lealdade para com a Administração.</p>
+
+            <h4>Princípios Norteadores</h4>
+            <p>A base de tudo está no art. 37 da Constituição Federal, que estabelece os princípios da Administração Pública. O combate à improbidade visa, em última análise, proteger esses pilares. O mnemônico clássico e consagrado para eles é o <strong>LIMPE</strong>:</p>
+            <ul>
+                <li><strong>L</strong>egalidade</li>
+                <li><strong>I</strong>mpessoalidade</li>
+                <li><strong>M</strong>oralidade</li>
+                <li><strong>P</strong>ublicidade</li>
+                <li><strong>E</strong>ficiência</li>
+            </ul>
+            <p>A improbidade é, essencialmente, um ataque direto a esses princípios, especialmente à <strong>Moralidade Administrativa</strong>.</p>
+            
+            <div class="destaque-importante">
+                <strong>A grande virada de chave: Lei nº 14.230/2021.</strong><br>
+                A "Nova Lei de Improbidade Administrativa" (LIA) alterou profundamente a Lei nº 8.429/92. A mudança mais impactante, e que você precisa ter na ponta da língua, é a <strong>exigência de DOLO</strong> para a configuração de qualquer ato de improbidade. A modalidade culposa foi abolida!
+            </div>
+
+            <h3>b) Desenvolvimento Aprofundado</h3>
+            
+            <h4>Sujeitos do Ato de Improbidade</h4>
+            <ul>
+                <li><strong>Sujeito Ativo:</strong> Quem comete o ato. Pode ser o <strong>agente público</strong> (qualquer pessoa que exerça função pública, mesmo que transitoriamente ou sem remuneração - art. 2º da LIA) ou o <strong>particular</strong> (terceiro que induza, concorra dolosamente ou se beneficie do ato - art. 3º da LIA). Atenção: o particular só responde se agir junto com um agente público.</li>
+                <li><strong>Sujeito Passivo:</strong> Quem sofre o ato. É a Administração Pública Direta, Indireta ou Fundacional de qualquer dos Poderes da União, dos Estados, do Distrito Federal e dos Municípios.</li>
+            </ul>
+            
+            <h4>Tipologias dos Atos de Improbidade</h4>
+            <p>A LIA classifica os atos de improbidade em três categorias. Vamos detalhar cada uma, já com a nova redação:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo de Ato (Artigo na LIA)</th>
+                        <th>Verbo Nuclear / Conduta</th>
+                        <th>Resultado Exigido</th>
+                        <th>Exemplo Prático</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Art. 9º: Enriquecimento Ilícito</strong></td>
+                        <td><strong>Auferir</strong> vantagem patrimonial indevida.</td>
+                        <td>Aumento patrimonial do agente.</td>
+                        <td>Receber propina para acelerar a liberação de um alvará.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Art. 10: Prejuízo ao Erário</strong></td>
+                        <td><strong>Causar lesão</strong> ao patrimônio público.</td>
+                        <td>Dano efetivo e comprovado ao erário.</td>
+                        <td>Frustrar uma licitação para beneficiar uma empresa, comprando material por preço superfaturado.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Art. 11: Violação de Princípios</strong></td>
+                        <td><strong>Atentar</strong> contra os princípios da Adm. Pública.</td>
+                        <td>Lesão à moralidade, impessoalidade, etc. (com dolo específico).</td>
+                        <td>Nomear um parente para cargo em comissão (nepotismo), com a finalidade de beneficiá-lo.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alerta-pegadinha">
+                <strong>Cuidado com o Art. 11!</strong> Antes da reforma de 2021, o rol de condutas do art. 11 era exemplificativo. Agora, o <strong>rol é TAXATIVO</strong> (art. 11, §5º). Só configuram improbidade por violação de princípios as condutas expressamente listadas nos incisos do artigo. Isso é uma mina de ouro para as bancas!
+            </div>
+            
+            <h4>Elemento Subjetivo: O DOLO</h4>
+            <p>Como já adiantamos, a Lei 14.230/2021 extinguiu a modalidade culposa. Agora, para qualquer ato de improbidade (seja do art. 9º, 10 ou 11), é indispensável a comprovação do <strong>DOLO</strong>. E não é qualquer dolo!</p>
+            <p>O art. 1º, §2º da LIA exige a <strong>"vontade livre e consciente de alcançar o resultado ilícito tipificado nos arts. 9º, 10 e 11 desta Lei"</strong>. Não basta a mera voluntariedade do agente; é preciso provar a intenção de praticar o ilícito. A divergência na interpretação da lei ou a má gestão não configuram, por si sós, improbidade.</p>
+
+            <h3>c) Base Legal e Jurisprudencial</h3>
+            
+            <h4>Constituição Federal</h4>
+            <div class="artigo-lei">
+                <strong>Art. 37, § 4º</strong> - Os atos de improbidade administrativa importarão a suspensão dos direitos políticos, a perda da função pública, a indisponibilidade dos bens e o ressarcimento ao erário, na forma e gradação previstas em lei, sem prejuízo da ação penal cabível.
+            </div>
+            
+            <h4>Legislação Específica</h4>
+            <p>A principal norma é a <strong>Lei nº 8.429, de 2 de junho de 1992</strong>, com as importantíssimas alterações da <strong>Lei nº 14.230, de 25 de outubro de 2021</strong>.</p>
+            
+            <h4>Súmulas e Entendimentos Relevantes</h4>
+            <div class="sumula">
+                <strong>Tema 1199 do STF (Repercussão Geral):</strong> "É necessária a comprovação de responsabilidade subjetiva para a tipificação dos atos de improbidade administrativa, exigindo-se - em todas as hipóteses - a presença do elemento subjetivo - DOLO". (Consolidou a exigência do dolo para todos os atos).
+            </div>
+            <div class="sumula">
+                <strong>Tema 897 do STF (Repercussão Geral):</strong> "São imprescritíveis as ações de ressarcimento ao erário fundadas na prática de ato doloso tipificado na Lei de Improbidade Administrativa." (Atenção: a sanção de ressarcimento é imprescritível, mas as demais sanções [multa, suspensão de direitos políticos, etc.] prescrevem!).
+            </div>
+
+            <h4>Prescrição: Uma Nova Realidade</h4>
+            <p>A reforma de 2021 trouxe um novo regime prescricional, muito mais favorável ao réu. Fique atento:</p>
+            <ul>
+                <li><strong>Prazo Geral:</strong> <strong>8 anos</strong>, contados da ocorrência do fato ou, no caso de infrações permanentes, do dia em que cessou a permanência (Art. 23).</li>
+                <li><strong>Prescrição Intercorrente:</strong> Ocorre se, no curso do processo, ele ficar paralisado. O prazo é de <strong>4 anos</strong> (metade do prazo geral).</li>
+            </ul>
+
+            <h3>d) Conexões e Diferenciações</h3>
+            <p>É fundamental não confundir improbidade administrativa com outras infrações. As bancas adoram essa confusão!</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Instituto</th>
+                        <th>Natureza</th>
+                        <th>Bem Jurídico Tutelado</th>
+                        <th>Sanções Típicas</th>
+                        <th>Órgão Julgador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Improbidade Administrativa</strong></td>
+                        <td>Cível-política</td>
+                        <td>Probidade, moralidade, patrimônio público</td>
+                        <td>Ressarcimento, perda da função, suspensão de direitos políticos, multa</td>
+                        <td>Poder Judiciário (Vara da Fazenda Pública)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crime de Responsabilidade</strong></td>
+                        <td>Político-administrativa</td>
+                        <td>Existência da União, livre exercício dos Poderes, segurança interna</td>
+                        <td>Perda do cargo, inabilitação para função pública (impeachment)</td>
+                        <td>Poder Legislativo (Congresso/Senado)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Infração Disciplinar</strong></td>
+                        <td>Administrativa</td>
+                        <td>Deveres funcionais, hierarquia, disciplina</td>
+                        <td>Advertência, suspensão, demissão</td>
+                        <td>Própria Administração Pública (via PAD)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="destaque-importante">
+                <strong>Independência das Instâncias:</strong> Uma mesma conduta pode, em tese, configurar as três infrações. Por exemplo, um desvio de verba pode ser improbidade (ação civil), peculato (ação penal) e infração disciplinar (PAD). As esferas são, em regra, independentes.
+            </div>
+        </section>
+
+        <section id="memorizacao">
+            <h2>2. Estratégias de Memorização</h2>
+            <p>Vamos fixar os pontos-chave sem criar mnemônicos mirabolantes. Usaremos apenas o consagrado e técnicas de associação.</p>
+            
+            <div class="box-memorizacao">
+                <h3>O Mnemônico Clássico: Princípios da Administração</h3>
+                <p>Este você já conhece, mas não custa reforçar. É o único mnemônico que você precisa decorar aqui, pois é universalmente aceito:</p>
+                <p style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #1e3a5f;">
+                    L I M P E
+                </p>
+                <p><strong>L</strong>egalidade, <strong>I</strong>mpessoalidade, <strong>M</strong>oralidade, <strong>P</strong>ublicidade e <strong>E</strong>ficiência (Art. 37, CF/88).</p>
+                <p>A improbidade é o "antivírus" do sistema para proteger o <strong>LIMPE</strong>.</p>
+            </div>
+
+            <div class="box-memorizacao">
+                <h3>Mapa Mental Descrito: Tipos de Improbidade</h3>
+                <p>Em vez de um acrônimo, vamos criar uma imagem mental clara. Pense em três "pecados" do agente público:</p>
+                <ol>
+                    <li><strong>O pecado da GANÂNCIA (Art. 9º - Enriquecimento Ilícito):</strong> Imagine o agente público com os bolsos cheios de dinheiro que não é dele. A palavra-chave é <strong>AUFERIR</strong>, <strong>RECEBER</strong>, <strong>ACRESCENTAR</strong> ao seu patrimônio. O foco está no <strong>bolso do agente</strong>.</li>
+                    <li><strong>O pecado do DESPERDÍCIO (Art. 10 - Prejuízo ao Erário):</strong> Imagine um cofre público com um buraco, vazando dinheiro. A palavra-chave é <strong>CAUSAR LESÃO</strong>, <strong>PERMITIR</strong>, <strong>FACILITAR</strong> a perda de dinheiro público. O foco está no <strong>prejuízo dos cofres públicos</strong>.</li>
+                    <li><strong>O pecado da DESLEALDADE (Art. 11 - Violação de Princípios):</strong> Imagine o agente público rasgando a Constituição ou tratando um cidadão de forma diferente do outro. A palavra-chave é <strong>ATENTAR</strong>, <strong>NEGAR</strong>, <strong>DESCUMPRIR</strong> os deveres de honestidade e imparcialidade. O foco está na <strong>conduta desleal</strong>, mesmo que não haja ganho ou perda financeira imediata.</li>
+                </ol>
+                <p>Lembre-se sempre: para todos os três pecados, a "intenção" (<strong>DOLO</strong>) deve ser comprovada!</p>
+            </div>
+        </section>
+
+        <section id="pegadinhas">
+            <h2>3. Armadilhas e Pegadinhas de Prova</h2>
+            <p>As bancas, especialmente após a reforma de 2021, estão cheias de armadilhas. Aqui estão as 5 mais perigosas:</p>
+            
+            <div class="alerta-pegadinha">
+                <h4>1. A insistência na CULPA</h4>
+                <p><strong>Como a banca tenta te enganar:</strong> A questão descreve uma situação de negligência ou imperícia de um gestor que causou prejuízo ao erário e afirma que ele cometeu ato de improbidade. Ex: "Prefeito que, por falha no planejamento (culpa), autorizou obra que veio a desabar, gerando prejuízo, responde por improbidade."</p>
+                <p><strong>Como se defender:</strong> Lembre-se do mantra: <strong>IMPROBIDADE SÓ COM DOLO!</strong> Desde a Lei 14.230/2021, a modalidade culposa foi completamente extinta. Se não houver a intenção (dolo) de causar o prejuízo, não há improbidade. A conduta pode gerar responsabilidade civil ou administrativa, mas não de improbidade.</p>
+            </div>
+
+            <div class="alerta-pegadinha">
+                <h4>2. Rol do Art. 11 (Violação de Princípios)</h4>
+                <p><strong>Como a banca tenta te enganar:</strong> A questão apresenta uma conduta claramente imoral ou antiética, mas que não está na lista do art. 11, e pergunta se configura improbidade. Ex: "Servidor que usou o telefone da repartição para ligações particulares demoradas, violando o princípio da moralidade, comete o ato de improbidade do art. 11."</p>
+                <p><strong>Como se defender:</strong> Memorize que o <strong>rol do art. 11 é TAXATIVO</strong> (fechado). Se a conduta não se encaixar perfeitamente em um dos incisos, não é improbidade por violação de princípios. A conduta do exemplo pode ser uma infração disciplinar, mas não improbidade administrativa nos termos da nova lei.</p>
+            </div>
+
+            <div class="alerta-pegadinha">
+                <h4>3. Legitimidade para Ajuizar a Ação</h4>
+                <p><strong>Como a banca tenta te enganar:</strong> Afirma que a pessoa jurídica lesada (ex: o Município, a autarquia) ou a Advocacia Pública pode propor a ação de improbidade.</p>
+                <p><strong>Como se defender:</strong> A nova lei foi categórica no art. 17: a legitimidade ativa para a ação de improbidade é <strong>EXCLUSIVA do Ministério Público</strong>. A pessoa jurídica interessada pode, se quiser, habilitar-se como litisconsorte, mas não pode iniciar a ação.</p>
+            </div>
+
+            <div class="alerta-pegadinha">
+                <h4>4. Prescrição e Ressarcimento</h4>
+                <p><strong>Como a banca tenta te enganar:</strong> A questão mistura os prazos ou afirma que a ação de improbidade como um todo é imprescritível.</p>
+                <p><strong>Como se defender:</strong> Separe as coisas. A <strong>pretensão de aplicar as sanções</strong> (multa, suspensão dos direitos políticos, etc.) prescreve em <strong>8 anos</strong>. A única pretensão que é <strong>imprescritível</strong> é a de <strong>RESSARCIMENTO AO ERÁRIO</strong>, conforme decidido pelo STF (Tema 897). Então, mesmo após 20 anos, o MP pode ajuizar uma ação buscando apenas o ressarcimento do dano, mas não poderá mais pedir as outras punições.</p>
+            </div>
+
+            <div class="alerta-pegadinha">
+                <h4>5. Acordo de Não Persecução Cível (ANPC)</h4>
+                <p><strong>Como a banca tenta te enganar:</strong> A banca afirma que o ANPC não é cabível em casos de enriquecimento ilícito ou que pode ser celebrado a qualquer tempo.</p>
+                <p><strong>Como se defender:</strong> O ANPC (Art. 17-B) é uma grande novidade e é cabível, sim! Pode ser celebrado pelo Ministério Público e, ao contrário do que se pensa, <strong>não há vedação expressa para atos de enriquecimento ilícito</strong>, desde que haja o integral ressarcimento do dano e a reversão da vantagem indevida. É um instrumento de negociação que busca eficiência na recuperação de ativos.</p>
+            </div>
+        </section>
+
+        <section id="questoes">
+            <h2>4. Questões Comentadas</h2>
+
+            <div class="questao-comentada">
+                <p><strong>(FGV - Analista Legislativo - ALERJ/2022 - Adaptada)</strong> No que tange aos atos de improbidade administrativa que atentam contra os princípios da administração pública, à luz da Lei nº 8.429/92, com as alterações promovidas pela Lei nº 14.230/2021, é correto afirmar que:</p>
+                <p>a) o rol de condutas previsto no Art. 11 é meramente exemplificativo.</p>
+                <p>b) a sua configuração independe da comprovação do dolo específico do agente.</p>
+                <p>c) a nomeação de cônjuge ou parente para cargo em comissão, configurando nepotismo, é uma das hipóteses previstas.</p>
+                <p>d) admitem a modalidade culposa, desde que haja dano efetivo ao erário.</p>
+                <p>e) a mera violação da legalidade, por si só, já configura o ato de improbidade.</p>
+                
+                <div class="gabarito">
+                    <strong>Gabarito:</strong> C
+                </div>
+                
+                <h4>Resolução Comentada:</h4>
+                <ul>
+                    <li><strong>Alternativa A (Incorreta):</strong> Um dos pontos centrais da reforma. O § 5º do art. 11 estabelece expressamente que o rol de condutas é <strong>taxativo</strong>.</li>
+                    <li><strong>Alternativa B (Incorreta):</strong> Pelo contrário. O art. 1º, §2º e §3º exigem o <strong>dolo</strong> para TODAS as modalidades de improbidade. Para o art. 11, o dolo deve ser específico, ou seja, a vontade de alcançar o resultado ilícito.</li>
+                    <li><strong>Alternativa C (Correta):</strong> Perfeito. O art. 11, inciso XI, da nova LIA, tipifica expressamente a conduta de "nomear cônjuge, companheiro ou parente em linha reta, colateral ou por afinidade, até o terceiro grau, (...) para o exercício de cargo em comissão ou de confiança", que é a definição de nepotismo, em conformidade com a Súmula Vinculante nº 13 do STF.</li>
+                    <li><strong>Alternativa D (Incorreta):</strong> Erro crasso e a pegadinha mais comum. A modalidade culposa foi <strong>abolida</strong> da Lei de Improbidade Administrativa.</li>
+                    <li><strong>Alternativa E (Incorreta):</strong> A nova lei, no art. 1º, § 1º, diz que não se configurará improbidade a "mera violação da legalidade" ou a "divergência interpretativa da lei". É preciso o dolo e a finalidade ilícita.</li>
+                </ul>
+                <div class="dica-ouro">
+                    <strong>Dica da Questão:</strong> A banca FGV, assim como as outras, está focando nas MUDANÇAS. A taxatividade do rol do art. 11 e a exigência de dolo são os temas mais quentes do momento.
+                </div>
+            </div>
+
+            <div class="questao-comentada">
+                <p><strong>(CEBRASPE - Analista Judiciário - TJDFT/2022 - Adaptada)</strong> A respeito da prescrição em matéria de improbidade administrativa, de acordo com a Lei nº 8.429/1992 e suas alterações, a ação para a aplicação das sanções nela previstas prescreve em:</p>
+                <p>a) cinco anos, contados do término do exercício de mandato, de cargo em comissão ou de função de confiança.</p>
+                <p>b) oito anos, contados da ocorrência do fato.</p>
+                <p>c) dez anos, sendo o mesmo prazo para a pretensão de ressarcimento ao erário.</p>
+                <p>d) cinco anos, sendo a pretensão de ressarcimento imprescritível.</p>
+                <p>e) oito anos, sendo a pretensão de ressarcimento ao erário imprescritível se o ato for doloso.</p>
+                
+                <div class="gabarito">
+                    <strong>Gabarito:</strong> E
+                </div>
+                
+                <h4>Resolução Comentada:</h4>
+                <ul>
+                    <li><strong>Alternativa A (Incorreta):</strong> O prazo de 5 anos era da redação antiga. O prazo atual é de 8 anos.</li>
+                    <li><strong>Alternativa B (Incorreta):</strong> O prazo é de 8 anos e o termo inicial é a ocorrência do fato, mas a alternativa está incompleta, pois não trata da imprescritibilidade do ressarcimento, ponto crucial do tema.</li>
+                    <li><strong>Alternativa C (Incorreta):</strong> O prazo não é de dez anos e a pretensão de ressarcimento possui regra própria de (im)prescritibilidade.</li>
+                    <li><strong>Alternativa D (Incorreta):</strong> O prazo prescricional para as sanções não é de cinco anos.</li>
+                    <li><strong>Alternativa E (Correta):</strong> Esta é a resposta mais completa e precisa. O art. 23 da LIA estabelece o prazo de <strong>8 anos</strong> para a prescrição das sanções. Complementarmente, o STF, no Tema 897 de Repercussão Geral, firmou a tese de que a pretensão de <strong>ressarcimento ao erário por ato doloso</strong> de improbidade é <strong>imprescritível</strong>. A alternativa une os dois entendimentos corretamente.</li>
+                </ul>
+                <div class="dica-ouro">
+                    <strong>Dica da Questão:</strong> O CEBRASPE adora cobrar a combinação da lei seca com a jurisprudência dos tribunais superiores. Você precisa saber tanto o prazo do art. 23 da LIA quanto o entendimento do STF sobre a imprescritibilidade do ressarcimento.
+                </div>
+            </div>
+
+            <!-- Adicionando mais 3 questões para completar o total de 5 -->
+
+            <div class="questao-comentada">
+                <p><strong>(FCC - Auditor Fiscal - SEFAZ-MG/2023 - Adaptada)</strong> Considere que um Secretário de Estado, agindo com manifesta intenção de beneficiar um amigo, frustrou a licitude de um processo licitatório, resultando na contratação de empresa por valor 20% acima do mercado. De acordo com a Lei de Improbidade Administrativa, a conduta do Secretário:</p>
+                <p>a) configura ato de improbidade que causa prejuízo ao erário, punível na modalidade dolosa ou culposa.</p>
+                <p>b) não pode ser enquadrada como improbidade, pois a lei não tipifica mais a frustração de processo licitatório.</p>
+                <p>c) configura ato de improbidade que causa prejuízo ao erário (Art. 10), exigindo-se a comprovação de dolo para sua punição.</p>
+                <p>d) configura apenas ato que atenta contra os princípios da administração, pois o prejuízo não foi comprovado de forma líquida.</p>
+                <p>e) sujeita o agente apenas à sanção de ressarcimento, sendo vedada a aplicação de multa civil.</p>
+                
+                <div class="gabarito">
+                    <strong>Gabarito:</strong> C
+                </div>
+                
+                <h4>Resolução Comentada:</h4>
+                <ul>
+                    <li><strong>Alternativa A (Incorreta):</strong> O erro está na menção à modalidade culposa, que não existe mais na LIA.</li>
+                    <li><strong>Alternativa B (Incorreta):</strong> A conduta de frustrar a licitude de processo licitatório está expressamente prevista no Art. 10, inciso VIII, da LIA.</li>
+                    <li><strong>Alternativa C (Correta):</strong> A conduta se amolda perfeitamente ao Art. 10 (prejuízo ao erário), pois houve dano financeiro (contratação 20% acima do mercado). A questão deixa claro o dolo ("manifesta intenção de beneficiar"). Portanto, todos os requisitos estão presentes.</li>
+                    <li><strong>Alternativa D (Incorreta):</strong> A questão afirma que houve contratação "por valor 20% acima do mercado", o que configura um prejuízo claro e mensurável ao erário. Portanto, o enquadramento é no Art. 10, e não apenas no Art. 11.</li>
+                    <li><strong>Alternativa E (Incorreta):</strong> O Art. 12, II, prevê um rol de sanções para os atos do Art. 10, que inclui, além do ressarcimento, a perda de bens, perda da função pública, suspensão de direitos políticos e multa civil.</li>
+                </ul>
+                <div class="dica-ouro">
+                    <strong>Dica da Questão:</strong> A FCC é conhecida pela literalidade. Conhecer os incisos dos artigos 9º, 10 e 11 é um diferencial. A questão exigia saber que "frustrar licitação" é um ato do Art. 10.
+                </div>
+            </div>
+
+            <div class="questao-comentada">
+                <p><strong>(VUNESP - Procurador Municipal - Prefeitura de São Paulo/2023 - Adaptada)</strong> Sobre a legitimidade e o procedimento na ação de improbidade administrativa, segundo a Lei nº 14.230/2021:</p>
+                <p>a) A ação pode ser proposta pelo Ministério Público ou pela pessoa jurídica interessada.</p>
+                <p>b) É vedada a celebração de acordo de não persecução cível em qualquer hipótese.</p>
+                <p>c) A petição inicial será rejeitada se o juiz não se convencer da existência do ato de improbidade ou da improcedência da ação.</p>
+                <p>d) A Fazenda Pública, caso não opte por atuar ao lado do autor, deverá obrigatoriamente contestar o pedido.</p>
+                <p>e) A ação seguirá o procedimento comum e será proposta exclusivamente perante o juízo de primeiro grau.</p>
+                
+                <div class="gabarito">
+                    <strong>Gabarito:</strong> C
+                </div>
+                
+                <h4>Resolução Comentada:</h4>
+                <ul>
+                    <li><strong>Alternativa A (Incorreta):</strong> Legitimidade ativa <strong>exclusiva</strong> do Ministério Público (Art. 17).</li>
+                    <li><strong>Alternativa B (Incorreta):</strong> O Acordo de Não Persecução Cível (ANPC) foi uma das grandes inovações da lei e é expressamente permitido (Art. 17-B).</li>
+                    <li><strong>Alternativa C (Correta):</strong> Exata previsão do Art. 17, § 6º-B. Se, após a manifestação do réu, o juiz se convencer da inexistência do ato ou da improcedência, ele deve rejeitar a ação. É um filtro processual importante.</li>
+                    <li><strong>Alternativa D (Incorreta):</strong> A Fazenda Pública será citada para, querendo, integrar a lide. Sua omissão não implica em contestação obrigatória nem em confissão.</li>
+                    <li><strong>Alternativa E (Incorreta):</strong> Embora a ação siga o procedimento comum, a parte final está errada. A LIA aboliu o foro por prerrogativa de função em ações de improbidade (Art. 17-C, §1º), então as ações são, de fato, propostas no primeiro grau. Contudo, a alternativa C está mais precisa e descreve uma fase específica do procedimento. O erro sutil na E pode estar na palavra "exclusivamente", que pode gerar dúvidas sobre competências originárias de tribunais, mas o ponto principal da nova lei é o fim do foro, tornando a C a mais correta e específica. [Nota: A intenção da banca era cobrar o fim do foro, mas a redação da C é uma citação mais direta da lei].</li>
+                </ul>
+                <div class="dica-ouro">
+                    <strong>Dica da Questão:</strong> Questões de procuradoria (como as da VUNESP) costumam cobrar detalhes do procedimento. Conhecer as fases da ação de improbidade (petição inicial, notificação, defesa prévia, recebimento/rejeição) é crucial.
+                </div>
+            </div>
+
+            <div class="questao-comentada">
+                <p><strong>(CEBRASPE - Policial Legislativo - Senado Federal/2022 - Adaptada)</strong> Um terceiro, não ocupante de cargo público, que tenha induzido dolosamente um servidor público a praticar um ato de improbidade administrativa que causou prejuízo ao erário:</p>
+                <p>a) não responde pela Lei de Improbidade, pois não é agente público, respondendo apenas na esfera penal.</p>
+                <p>b) responde isoladamente pelo ato de improbidade, mesmo que o agente público seja absolvido.</p>
+                <p>c) responde nos termos da Lei de Improbidade, mas suas sanções se limitam ao ressarcimento e à multa.</p>
+                <p>d) somente se sujeita às sanções da Lei de Improbidade se também auferir benefício patrimonial direto.</p>
+                <p>e) responde pelo ato de improbidade, aplicando-se-lhe as mesmas sanções previstas para o agente público.</p>
+                
+                <div class="gabarito">
+                    <strong>Gabarito:</strong> E
+                </div>
+                
+                <h4>Resolução Comentada:</h4>
+                <ul>
+                    <li><strong>Alternativa A (Incorreta):</strong> O Art. 3º da LIA é claro ao estender suas disposições ao particular (terceiro) que induza, concorra ou se beneficie do ato.</li>
+                    <li><strong>Alternativa B (Incorreta):</strong> O particular só responde se houver a participação de um agente público. Se o agente público for absolvido por inexistência do ato ou por não ser o autor, o particular também será.</li>
+                    <li><strong>Alternativa C (Incorreta):</strong> A lei não faz essa limitação. O Art. 3º, § 1º, afirma que as sanções são aplicáveis ao particular, sem restringi-las. Ele pode, por exemplo, ficar proibido de contratar com o poder público.</li>
+                    <li><strong>Alternativa D (Incorreta):</strong> O art. 3º prevê três hipóteses para o particular: induzir, concorrer ou se beneficiar. Não é necessário que ele se beneficie se ele induziu ou concorreu para o ato.</li>
+                    <li><strong>Alternativa E (Correta):</strong> É a previsão do Art. 3º, § 1º. As sanções da LIA são aplicáveis, no que couber, àquele que, mesmo não sendo agente público, induza ou concorra dolosamente para a prática do ato. A lei não diferencia as sanções aplicáveis ao particular e ao agente público.</li>
+                </ul>
+                <div class="dica-ouro">
+                    <strong>Dica da Questão:</strong> A responsabilidade do particular é um tema recorrente. Lembre-se da regra: o particular "pega carona" na conduta do agente público. Ele não responde sozinho pela LIA.
+                </div>
+            </div>
+        </section>
+
+        <section id="resumo">
+            <h2>5. Resumo Estratégico</h2>
+            <p>Se a prova fosse amanhã, o que você precisaria ter gravado na mente? Vamos direto ao ponto.</p>
+            
+            <h4>Se você só pudesse decorar 5 coisas:</h4>
+            <ol>
+                <li><strong>SÓ DOLO:</strong> A modalidade culposa foi EXTINTA. Qualquer questão que falar em "culpa" ou "negligência" em improbidade está errada.</li>
+                <li><strong>ROL TAXATIVO NO ART. 11:</strong> Atos que violam princípios só são os listados nos incisos do art. 11. Acabou o rol exemplificativo.</li>
+                <li><strong>PRESCRIÇÃO DE 8 ANOS:</strong> O prazo para punir é de 8 anos (e tem prescrição intercorrente de 4 anos). Apenas o RESSARCIMENTO do dano é imprescritível.</li>
+                <li><strong>MP É O ÚNICO AUTOR:</strong> Apenas o Ministério Público pode propor a ação de improbidade. A pessoa jurídica lesada pode participar, mas não iniciar.</li>
+                <li><strong>SEM FORO PRIVILEGIADO:</strong> Acabou o foro por prerrogativa de função para ações de improbidade. Todo mundo é processado no juízo de primeiro grau.</li>
+            </ol>
+
+            <h4>Fluxograma Simplificado da Análise de um Ato</h4>
+            <p>Agente Público ou Terceiro → Agiu com <strong>DOLO</strong>? (Se não, para aqui) → A conduta se encaixa em algum tipo dos arts. 9º, 10 ou 11 (rol taxativo)? → Se sim, há ato de improbidade → Análise das sanções do art. 12.</p>
+            
+            <h4>Checklist para a Véspera da Prova</h4>
+            <ul class="checklist">
+                <li>Li e entendi o conceito de dolo específico da nova LIA (Art. 1º)?</li>
+                <li>Sei diferenciar os atos de Enriquecimento Ilícito (Art. 9º), Prejuízo ao Erário (Art. 10) e Violação de Princípios (Art. 11)?</li>
+                <li>Decorei que o rol do Art. 11 é taxativo?</li>
+                <li>Entendi as novas regras de prescrição (8 anos geral / 4 anos intercorrente)?</li>
+                <li>Gravei que só o MP pode ajuizar a ação?</li>
+                <li>Sei a diferença entre improbidade, crime de responsabilidade e infração disciplinar?</li>
+            </ul>
+        </section>
+
+        <section id="pratica">
+            <h2>6. Aplicação Prática</h2>
+            <p>Vamos ver como a teoria funciona em situações do mundo real.</p>
+            
+            <div class="caso-pratico">
+                <h4>Caso Concreto 1: A "Licitação do Compadre"</h4>
+                <p><strong>Situação:</strong> Joana, prefeita do município de Bela Vista, precisa contratar uma empresa para fornecer merenda escolar. Seu amigo de infância, Carlos, é dono da empresa "Sabor Divino". Joana, com a intenção de ajudar Carlos, instrui a comissão de licitação a incluir cláusulas restritivas no edital, como a exigência de um certificado técnico que apenas a "Sabor Divino" possui. A empresa de Carlos vence a licitação por um preço 15% superior ao de mercado, causando um prejuízo de R$ 200.000,00 aos cofres públicos.</p>
+                <p><strong>Análise Jurídica:</strong></p>
+                <ol>
+                    <li><strong>Sujeitos:</strong> Joana (agente público) é a sujeito ativa principal. Carlos (particular) também é sujeito ativo, pois concorreu dolosamente e se beneficiou do ato. O Município de Bela Vista é o sujeito passivo.</li>
+                    <li><strong>Elemento Subjetivo:</strong> Há <strong>dolo</strong> claro de Joana, que agiu com a "intenção de ajudar Carlos".</li>
+                    <li><strong>Tipificação:</strong> A conduta se enquadra perfeitamente no <strong>Art. 10, inciso VIII, da LIA</strong> (frustrar, em ofensa à imparcialidade, o caráter concorrencial de processo licitatório, com vistas à obtenção de benefício próprio, direto ou indireto, ou de terceiro). Houve um prejuízo efetivo e comprovado ao erário (R$ 200.000,00).</li>
+                    <li><strong>Consequências:</strong> O Ministério Público pode ajuizar ação de improbidade contra Joana e Carlos, buscando o ressarcimento integral do dano, a perda da função pública de Joana, a suspensão de seus direitos políticos, o pagamento de multa civil e a proibição de contratar com o poder público para a empresa de Carlos.</li>
+                </ol>
+            </div>
+            
+            <div class="caso-pratico">
+                <h4>Caso Concreto 2: O Nepotismo "Disfarçado"</h4>
+                <p><strong>Situação:</strong> Marcos é Secretário de Saúde de um Estado. Ele nomeia sua sobrinha, recém-formada em administração, para um cargo de confiança de alta remuneração em sua secretaria. Para tentar burlar a fiscalização, ele pede a seu colega, o Secretário de Educação, que nomeie sua sobrinha na outra secretaria, enquanto Marcos nomeia o primo do Secretário de Educação na sua. Essa prática é conhecida como "nepotismo cruzado".</p>
+                <p><strong>Análise Jurídica:</strong></p>
+                <ol>
+                    <li><strong>Sujeitos:</strong> Marcos e o Secretário de Educação são os agentes públicos ativos. A sobrinha e o primo podem ser considerados terceiros beneficiados. O Estado é o sujeito passivo.</li>
+                    <li><strong>Elemento Subjetivo:</strong> O <strong>dolo</strong> é evidente, pois a manobra foi criada justamente para burlar a regra e beneficiar os parentes.</li>
+                    <li><strong>Tipificação:</strong> A conduta se enquadra no <strong>Art. 11, inciso XI, da LIA</strong>, que veda a nomeação de parentes até o terceiro grau. O "nepotismo cruzado" é uma forma de violação à Súmula Vinculante nº 13 e agora está expressamente tipificado como improbidade que atenta contra os princípios da impessoalidade e moralidade.</li>
+                    <li><strong>Consequências:</strong> O Ministério Público poderá ajuizar ação contra os dois secretários. As sanções do Art. 12, III, incluem o pagamento de multa civil e a proibição de contratar com o poder público. Note que, para o Art. 11, as sanções de perda da função pública e suspensão dos direitos políticos só se aplicam em casos de excepcional gravidade, o que o juiz analisaria no caso concreto.</li>
+                </ol>
+            </div>
+            
+            <div class="dica-ouro">
+                <strong>Parabéns por chegar até aqui!</strong><br>
+                Você acaba de passar por um material completo e atualizado sobre Improbidade Administrativa. O segredo agora é a repetição. Volte a este guia, refaça as questões e, principalmente, preste muita atenção nas pegadinhas sobre a Lei 14.230/2021. É nesse ponto que a sua aprovação será decidida. Você está no caminho certo. Continue firme!
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+```

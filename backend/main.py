@@ -8,6 +8,8 @@ from typing import Dict, List, Any
 from contextlib import asynccontextmanager
 import yaml
 from dotenv import load_dotenv
+from datetime import datetime
+import os
 
 # Configuração de Paths
 BACKEND_DIR = Path(__file__).parent
@@ -82,6 +84,45 @@ async def monitoring_page(request: Request, execucao_id: str):
 
 
 # --- Rotas da API ---
+
+# --- Rotas da API ---
+
+@app.get("/health")
+async def health():
+    """Health check endpoint para monitoramento de instâncias."""
+    from datetime import datetime
+    import os
+    
+    try:
+        # Tentar contar execuções ativas
+        execucoes = 0
+        try:
+            from backend.app.redis_client import redis_conn
+            keys = redis_conn.keys("execucao:*")
+            execucoes = len(keys) if keys else 0
+        except:
+            pass
+        
+        return {
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "execucoes_ativas": execucoes,
+            "instance_id": os.getenv("INSTANCE_ID", "unknown")
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/api/upload", response_class=HTMLResponse)
+async def upload_e_validar_arquivos(request: Request, files: List[UploadFile] = File(...)):
+    """
+    Recebe arquivos via HTMX, valida-os e retorna um fragmento de HTML com os resultados.
+    """
+    # ... resto do código existente ...
 
 @app.post("/api/upload", response_class=HTMLResponse)
 async def upload_e_validar_arquivos(request: Request, files: List[UploadFile] = File(...)):
