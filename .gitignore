@@ -29,6 +29,9 @@ ENV/
 
 # Environment variables
 .env
+env.instance_1
+env.instance_2
+env.instance_3
 .env.local
 
 # IDEs
