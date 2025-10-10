@@ -17,3 +17,22 @@
 [2m2025-10-10T12:20:39.774148Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
 [2m2025-10-10T12:23:48.017917Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_122348[0m [36mnum_files[0m=[35m1[0m
 [2m2025-10-10T12:23:48.295655Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_122348[0m [36mexecucao_id[0m=[35m20251010_122348[0m
+[2m2025-10-10T13:00:02.829555Z[0m [[32m[1minfo     [0m] [1msse_connection_closed         [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_122348[0m
+[2m2025-10-10T13:00:02.857061Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:00:04.917428Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T13:00:04.918380Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:00:05.107399Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_122348[0m [36mexecucao_id[0m=[35m20251010_122348[0m
+[2m2025-10-10T13:00:11.718106Z[0m [[32m[1minfo     [0m] [1msse_connection_closed         [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_122348[0m
+[2m2025-10-10T13:00:59.485304Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:02:27.360614Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T13:02:27.361357Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:04:16.490133Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_130416[0m [36mnum_files[0m=[35m1[0m
+[2m2025-10-10T13:04:16.910519Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_130416[0m [36mexecucao_id[0m=[35m20251010_130416[0m
+[2m2025-10-10T13:10:48.893829Z[0m [[32m[1minfo     [0m] [1msse_connection_closed         [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_130416[0m
+[2m2025-10-10T13:10:52.616601Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:13:22.183861Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T13:13:22.184460Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T13:15:30.359076Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_131530[0m [36mnum_files[0m=[35m1[0m
+[2m2025-10-10T13:15:30.611483Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_131530[0m [36mexecucao_id[0m=[35m20251010_131530[0m
+[2m2025-10-10T13:15:35.022754Z[0m [[32m[1minfo     [0m] [1msse_connection_closed         [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_131530[0m
+[2m2025-10-10T13:18:58.155963Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m

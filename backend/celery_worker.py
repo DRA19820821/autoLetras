@@ -9,10 +9,15 @@ load_dotenv()
 
 BACKEND_DIR = Path(__file__).parent
 PROJECT_ROOT = BACKEND_DIR.parent
-INPUTS_DIR = PROJECT_ROOT / "data" / "inputs"
-OUTPUTS_DIR = PROJECT_ROOT / "data" / "outputs"
-CHECKPOINTS_DIR = PROJECT_ROOT / "data" / "checkpoints"
 
+# CORREÇÃO: Usar DATA_DIR completo da variável de ambiente
+# DATA_DIR já contém "data/instance_1" completo
+INSTANCE_DATA_DIR = PROJECT_ROOT / os.getenv("DATA_DIR", "data")
+INPUTS_DIR = INSTANCE_DATA_DIR / "inputs"
+OUTPUTS_DIR = INSTANCE_DATA_DIR / "outputs"
+CHECKPOINTS_DIR = INSTANCE_DATA_DIR / "checkpoints"
+
+# Criar diretórios se não existirem
 INPUTS_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
