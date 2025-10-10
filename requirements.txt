@@ -19,7 +19,7 @@ langchain-community==0.3.30
 langchain-core==0.3.77
 langchain-google-genai==2.1.7
 langchain-openai==0.3.34
-google-generativeai==0.8.3
+#google-generativeai==0.8.3
 grpcio==1.68.1
 grpcio-status==1.68.1
 
