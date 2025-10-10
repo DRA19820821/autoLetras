@@ -11,3 +11,9 @@
 [2m2025-10-10T11:56:50.372449Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
 [2m2025-10-10T11:59:32.150522Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_115932[0m [36mnum_files[0m=[35m8[0m
 [2m2025-10-10T11:59:32.410491Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_115932[0m [36mexecucao_id[0m=[35m20251010_115932[0m
+[2m2025-10-10T12:19:26.496395Z[0m [[32m[1minfo     [0m] [1msse_connection_closed         [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_115932[0m
+[2m2025-10-10T12:19:27.198253Z[0m [[32m[1minfo     [0m] [1mserver_shutdown               [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T12:20:39.773219Z[0m [[32m[1minfo     [0m] [1mthrottler_initialized         [0m [[0m[1m[34mbackend.app.retry.throttler[0m][0m [36mlimits[0m=[35m{'openai': 5, 'anthropic': 5, 'google': 8, 'deepseek': 3}[0m
+[2m2025-10-10T12:20:39.774148Z[0m [[32m[1minfo     [0m] [1mserver_started                [0m [[0m[1m[34mbackend.main[0m][0m
+[2m2025-10-10T12:23:48.017917Z[0m [[32m[1minfo     [0m] [1mexecution_started             [0m [[0m[1m[34mbackend.main[0m][0m [36mexecucao_id[0m=[35m20251010_122348[0m [36mnum_files[0m=[35m1[0m
+[2m2025-10-10T12:23:48.295655Z[0m [[32m[1minfo     [0m] [1msse_connection_opened         [0m [[0m[1m[34mbackend.main[0m][0m [36mchannel[0m=[35mexecucao_status:20251010_122348[0m [36mexecucao_id[0m=[35m20251010_122348[0m

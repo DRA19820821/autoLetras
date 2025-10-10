@@ -319,6 +319,7 @@ networks:
             print(f"   🕐 Iniciada: {info['started_at']}")
             
             # Verificar se containers estão rodando
+            # Verificar se containers estão rodando
             try:
                 result = subprocess.run([
                     "docker", "compose",
@@ -328,7 +329,13 @@ networks:
                 ], capture_output=True, text=True, cwd=PROJECT_ROOT)
                 
                 if result.returncode == 0 and result.stdout:
-                    containers = json.loads(result.stdout) if result.stdout.startswith('[') else [json.loads(result.stdout)]
+                    # Docker pode retornar múltiplos JSONs (um por linha)
+                    lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
+                    if len(lines) == 1:
+                        containers = [json.loads(lines[0])]
+                    else:
+                        containers = [json.loads(line) for line in lines]
+                    
                     running = sum(1 for c in containers if c.get('State') == 'running')
                     print(f"   🐳 Containers: {running}/{len(containers)} rodando")
                 else:
