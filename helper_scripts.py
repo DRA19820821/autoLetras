@@ -96,10 +96,13 @@ def distribute_files(source_dir: Path, instances: dict, strategy: str = "round-r
 # 2. COLETAR RESULTADOS
 # ============================================================================
 
+from pathlib import Path
+import shutil
+
 def collect_results(output_dir: Path, instances: dict):
     """
     Coleta resultados de todas as instâncias para um diretório único.
-    
+
     Args:
         output_dir: Diretório de destino
         instances: Dicionário de instâncias
@@ -107,41 +110,54 @@ def collect_results(output_dir: Path, instances: dict):
     if not instances:
         print("❌ Nenhuma instância ativa")
         return
-    
+
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print(f"\n📥 Coletando resultados de {len(instances)} instância(s)")
     print(f"   Destino: {output_dir}")
     print("=" * 70)
-    
+
     total_files = 0
-    
-    for instance_id, instance_info in sorted(instances.items(), key=lambda x: int(x[0])):
-        source_dir = Path(instance_info['data_dir']) / 'outputs'
-        
+
+    # Ordenação robusta: tenta converter o id para int; se não der, usa string
+    def sort_key(item):
+        k = str(item[0])
+        return (0, int(k)) if k.isdigit() else (1, k)
+
+    for instance_id, instance_info in sorted(instances.items(), key=sort_key):
+        # Novo layout: <data_dir>/instance_<id>/outputs
+        base_dir = Path(instance_info['data_dir'])
+        source_dir = base_dir / f"instance_{instance_id}" / "outputs"
+
+        # Fallback para layout antigo: <data_dir>/outputs
         if not source_dir.exists():
-            print(f"⚠️  Instância {instance_id}: sem diretório de outputs")
+            legacy_dir = base_dir / "outputs"
+            if legacy_dir.exists():
+                source_dir = legacy_dir
+
+        if not source_dir.exists():
+            print(f"⚠️  Instância {instance_id}: sem diretório de outputs (verificado: {source_dir})")
             continue
-        
+
         json_files = list(source_dir.glob("*.json"))
-        
+
         if not json_files:
-            print(f"ℹ️  Instância {instance_id}: sem resultados")
+            print(f"ℹ️  Instância {instance_id}: sem resultados em {source_dir}")
             continue
-        
-        print(f"\n📁 Instância {instance_id} ({len(json_files)} arquivo(s)):")
-        
+
+        print(f"\n📁 Instância {instance_id} ({len(json_files)} arquivo(s)) de {source_dir}:")
         for json_file in json_files:
-            # Renomear arquivo para incluir instância
+            # Renomeia para incluir a instância no nome final
             new_name = f"i{instance_id}_{json_file.name}"
             dest_file = output_dir / new_name
-            
+
             shutil.copy2(json_file, dest_file)
             print(f"   ✓ {json_file.name} → {new_name}")
             total_files += 1
-    
+
     print("\n" + "=" * 70)
     print(f"✅ {total_files} arquivo(s) coletado(s) em: {output_dir}")
+
 
 # ============================================================================
 # 3. MONITORAR TODAS AS INSTÂNCIAS

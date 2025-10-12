@@ -1,4 +1,5 @@
 # Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -80,3 +81,5 @@ dmypy.json
 # OS
 Thumbs.db
 .DS_Store
+
+resultados_finais/*
