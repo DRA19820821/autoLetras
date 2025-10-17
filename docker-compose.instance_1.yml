@@ -23,7 +23,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data/instance_1:/app/data
+      - ./data/instance_1:/app/data/instance_1
       - ./backend:/app/backend
       - ./frontend:/app/frontend
     env_file:
@@ -33,6 +33,7 @@ services:
       - REDIS_PORT=6379
       - PORT=8000
       - INSTANCE_ID=1
+      - DATA_DIR=data/instance_1
       - PYTHONPATH=/app
     depends_on:
       redis_instance_1:
@@ -47,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: worker_instance_1
     volumes:
-      - ./data/instance_1:/app/data
+      - ./data/instance_1:/app/data/instance_1
       - ./backend:/app/backend
     env_file:
       - .env.instance_1
@@ -55,6 +56,7 @@ services:
       - REDIS_HOST=redis_instance_1
       - REDIS_PORT=6379
       - INSTANCE_ID=1
+      - DATA_DIR=data/instance_1
       - PYTHONPATH=/app
     depends_on:
       redis_instance_1:

@@ -10,17 +10,28 @@ load_dotenv()
 BACKEND_DIR = Path(__file__).parent
 PROJECT_ROOT = BACKEND_DIR.parent
 
-# CORREÇÃO: Usar DATA_DIR completo da variável de ambiente
-# DATA_DIR já contém "data/instance_1" completo
-INSTANCE_DATA_DIR = PROJECT_ROOT / os.getenv("DATA_DIR", "data")
+# CORREÇÃO: Usar DATA_DIR da variável de ambiente diretamente (sem duplicação)
+DATA_DIR = os.getenv("DATA_DIR", "data")
+if not DATA_DIR.startswith("/"):
+    # Se for caminho relativo, resolver a partir do PROJECT_ROOT
+    INSTANCE_DATA_DIR = PROJECT_ROOT / DATA_DIR
+else:
+    # Se for caminho absoluto, usar diretamente
+    INSTANCE_DATA_DIR = Path(DATA_DIR)
+
 INPUTS_DIR = INSTANCE_DATA_DIR / "inputs"
 OUTPUTS_DIR = INSTANCE_DATA_DIR / "outputs"
 CHECKPOINTS_DIR = INSTANCE_DATA_DIR / "checkpoints"
+LOGS_DIR = INSTANCE_DATA_DIR / "logs"
 
 # Criar diretórios se não existirem
-INPUTS_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
+for dir_path in [INPUTS_DIR, OUTPUTS_DIR, CHECKPOINTS_DIR, LOGS_DIR]:
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+print(f"[CELERY] DATA_DIR: {DATA_DIR}")
+print(f"[CELERY] INSTANCE_DATA_DIR: {INSTANCE_DATA_DIR}")
+print(f"[CELERY] INPUTS_DIR: {INPUTS_DIR}")
+print(f"[CELERY] OUTPUTS_DIR: {OUTPUTS_DIR}")
 
 from backend.app.core.parser import extrair_metadados, gerar_nome_saida
 from backend.app.agents.graph import criar_workflow
@@ -64,13 +75,15 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
     config = ConfigExecucao(**config_dict)
 
     def update_status(etapa: str, progresso: int, detalhes: str = ""):
-        """CORRIGIDO: Adiciona logging detalhado e tratamento de erros."""
+        """Atualiza status com logging detalhado."""
         logger.info(
             "attempting_status_update",
             execucao_id=execucao_id,
             arquivo=arquivo_nome,
             etapa=etapa,
-            progresso=progresso
+            progresso=progresso,
+            inputs_dir=str(INPUTS_DIR),
+            outputs_dir=str(OUTPUTS_DIR)
         )
         
         try:
@@ -107,9 +120,24 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
 
     try:
         update_status("Iniciando", 5, "Extraindo metadados...")
+        
+        # CORREÇÃO: Verificar se o arquivo existe no diretório correto
         html_path = INPUTS_DIR / arquivo_nome
+        logger.info(f"Procurando arquivo em: {html_path}")
+        
         if not html_path.exists():
-            raise FileNotFoundError(f"Arquivo não encontrado: {html_path}")
+            # Tentar caminho alternativo (caso o arquivo tenha sido colocado em outro lugar)
+            alt_path = PROJECT_ROOT / "data" / "inputs" / arquivo_nome
+            if alt_path.exists():
+                logger.info(f"Arquivo encontrado em caminho alternativo: {alt_path}")
+                html_path = alt_path
+            else:
+                logger.error(f"Arquivo não encontrado em nenhum dos caminhos:")
+                logger.error(f"  - {html_path}")
+                logger.error(f"  - {alt_path}")
+                raise FileNotFoundError(f"Arquivo não encontrado: {arquivo_nome}")
+        
+        logger.info(f"Processando arquivo: {html_path}")
         metadados = extrair_metadados(html_path)
 
         checkpointer_path = str(CHECKPOINTS_DIR / f"{execucao_id}_{arquivo_nome}.db")
@@ -158,12 +186,11 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                 graph = builder.compile(checkpointer=saver)
                 
                 last_ciclo = 1
-                step_count = 0  # CORRIGIDO: Contador de steps
+                step_count = 0
                 
                 async for state in graph.astream(initial_state, config_exec):
-                    step_count += 1  # CORRIGIDO: Incrementar contador
+                    step_count += 1
                     
-                    # CORRIGIDO: Atualizar progresso a cada 3 steps
                     if step_count % 3 == 0:
                         progresso = min(20 + (step_count * 2), 95)
                         update_status(
@@ -215,6 +242,7 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
                 "salvando_ciclo",
                 ciclo=ciclo,
                 arquivo=output_nome,
+                output_path=str(output_path),
                 tem_letra=bool(letra_atual),
                 tamanho_letra=len(letra_atual),
                 num_llms=len(llms_ciclo)
@@ -253,6 +281,8 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             
             llms_ciclo = resultado.get('llms_usados', {}).get(f'ciclo_{ultimo_ciclo}', [])
             
+            logger.info(f"Salvando output final em: {output_path}")
+            
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump({
                     "metadata": {
@@ -280,7 +310,6 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
             for i in range(1, config.num_ciclos + 1)
         ]
         
-        # CORRIGIDO: Publicar resultado final
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,
@@ -292,7 +321,8 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
         logger.info(
             "task_completed",
             arquivo=arquivo_nome,
-            outputs=outputs_gerados
+            outputs=outputs_gerados,
+            outputs_dir=str(OUTPUTS_DIR)
         )
         
         return {"sucesso": True, "outputs": outputs_gerados}
@@ -300,7 +330,6 @@ def processar_arquivo_task(execucao_id: str, arquivo_nome: str, config_dict: dic
     except Exception as e:
         logger.error("celery_task_failed", arquivo=arquivo_nome, erro=str(e), exc_info=True)
         
-        # CORRIGIDO: Publicar erro
         publish_status_update(execucao_id, {
             "type": "file_result",
             "arquivo": arquivo_nome,

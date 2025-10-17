@@ -96,14 +96,16 @@ class InstanceManager:
         print(f"   Backend: porta {backend_port}")
         print(f"   Redis: porta {redis_port}")
         
-        # Criar diretórios isolados
+        # CORREÇÃO: Criar diretórios sem duplicação
         data_dir = PROJECT_ROOT / "data" / f"instance_{instance_id}"
         for subdir in ['inputs', 'outputs', 'checkpoints', 'logs']:
-            (data_dir / subdir).mkdir(parents=True, exist_ok=True)
+            dir_path = data_dir / subdir
+            dir_path.mkdir(parents=True, exist_ok=True)
+            print(f"   📁 {dir_path.relative_to(PROJECT_ROOT)}")
         
         # Criar arquivo .env específico
         env_file = PROJECT_ROOT / f".env.instance_{instance_id}"
-        self._create_env_file(env_file, instance_id, backend_port, redis_port)
+        self._create_env_file(env_file, instance_id, backend_port, redis_port, data_dir)
         
         # Criar docker-compose específico
         compose_file = PROJECT_ROOT / f"docker-compose.instance_{instance_id}.yml"
@@ -145,7 +147,7 @@ class InstanceManager:
             compose_file.unlink(missing_ok=True)
             return False
     
-    def _create_env_file(self, env_file, instance_id, backend_port, redis_port):
+    def _create_env_file(self, env_file, instance_id, backend_port, redis_port, data_dir):
         """Cria arquivo .env para a instância."""
         # Carregar .env base
         base_env = PROJECT_ROOT / ".env"
@@ -155,7 +157,7 @@ class InstanceManager:
         else:
             base_content = ""
         
-        # Adicionar/sobrescrever variáveis específicas
+        # CORREÇÃO: Usar caminho relativo correto (sem duplicação)
         env_content = f"""# Instância {instance_id} - Gerado automaticamente
 # {datetime.now().isoformat()}
 
@@ -199,7 +201,7 @@ services:
     ports:
       - "{backend_port}:8000"
     volumes:
-      - ./data/instance_{instance_id}:/app/data
+      - ./data/instance_{instance_id}:/app/data/instance_{instance_id}
       - ./backend:/app/backend
       - ./frontend:/app/frontend
     env_file:
@@ -209,6 +211,7 @@ services:
       - REDIS_PORT=6379
       - PORT=8000
       - INSTANCE_ID={instance_id}
+      - DATA_DIR=data/instance_{instance_id}
       - PYTHONPATH=/app
     depends_on:
       redis_instance_{instance_id}:
@@ -223,7 +226,7 @@ services:
       dockerfile: Dockerfile
     container_name: worker_instance_{instance_id}
     volumes:
-      - ./data/instance_{instance_id}:/app/data
+      - ./data/instance_{instance_id}:/app/data/instance_{instance_id}
       - ./backend:/app/backend
     env_file:
       - .env.instance_{instance_id}
@@ -231,6 +234,7 @@ services:
       - REDIS_HOST=redis_instance_{instance_id}
       - REDIS_PORT=6379
       - INSTANCE_ID={instance_id}
+      - DATA_DIR=data/instance_{instance_id}
       - PYTHONPATH=/app
     depends_on:
       redis_instance_{instance_id}:
@@ -318,7 +322,19 @@ networks:
             print(f"   📁 Dados: {info['data_dir']}")
             print(f"   🕐 Iniciada: {info['started_at']}")
             
-            # Verificar se containers estão rodando
+            # Verificar arquivos em inputs/outputs
+            data_path = Path(info['data_dir'])
+            inputs_path = data_path / 'inputs'
+            outputs_path = data_path / 'outputs'
+            
+            if inputs_path.exists():
+                input_files = list(inputs_path.glob("*.html"))
+                print(f"   📥 Arquivos de entrada: {len(input_files)}")
+            
+            if outputs_path.exists():
+                output_files = list(outputs_path.glob("*.json"))
+                print(f"   📤 Arquivos de saída: {len(output_files)}")
+            
             # Verificar se containers estão rodando
             try:
                 result = subprocess.run([
@@ -329,20 +345,20 @@ networks:
                 ], capture_output=True, text=True, cwd=PROJECT_ROOT)
                 
                 if result.returncode == 0 and result.stdout:
-                    # Docker pode retornar múltiplos JSONs (um por linha)
                     lines = [line.strip() for line in result.stdout.strip().split('\n') if line.strip()]
-                    if len(lines) == 1:
-                        containers = [json.loads(lines[0])]
-                    else:
-                        containers = [json.loads(line) for line in lines]
+                    containers = []
+                    for line in lines:
+                        try:
+                            containers.append(json.loads(line))
+                        except:
+                            pass
                     
-                    running = sum(1 for c in containers if c.get('State') == 'running')
-                    print(f"   🐳 Containers: {running}/{len(containers)} rodando")
-                else:
-                    print(f"   ⚠️  Status desconhecido")
+                    if containers:
+                        running = sum(1 for c in containers if c.get('State') == 'running')
+                        print(f"   🐳 Containers: {running}/{len(containers)} rodando")
                     
             except Exception as e:
-                print(f"   ⚠️  Erro ao verificar: {e}")
+                print(f"   ⚠️  Erro ao verificar containers: {e}")
         
         print("\n" + "=" * 80)
     

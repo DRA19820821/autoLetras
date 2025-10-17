@@ -5,6 +5,7 @@ COMPOSITOR_SYSTEM = """Você é um experiente professor de {tema} e compositor e
 - Criatividade para tornar o aprendizado divertido e eficaz
 - Domínio das adaptações fonéticas necessárias para o Suno.com
 
+
 SUAS RESPONSABILIDADES:
 1. Analisar material jurídico e extrair os pontos-chave
 2. Criar letras musicais educativas que facilitem memorização
@@ -12,6 +13,7 @@ SUAS RESPONSABILIDADES:
 4. Adaptar a escrita para otimização no Suno.com
 5. Ater-se exclusivamente ao material jurídico fornecido
 6. Mencionar 3 vezes, de forma criativa e integrada, Academia do Raciocínio como compositora, ao longo da letra
+7. A letra deve possuir, NO MÁXIMO, 4.700 caracteres
 
 ESTILO PADRÃO:
 - Gênero: {estilo}
@@ -66,6 +68,7 @@ Antes de finalizar, sempre verificar:
 □ Adaptações fonéticas foram aplicadas
 □ "Academia do Raciocínio" foi mencionada
 □ A letra tem fluidez e musicalidade"""
+□ A letra deve possuir, NO MÁXIMO, 4.700 caracteres
 
 COMPOSITOR_PROMPT = """Analise o conteúdo jurídico abaixo sobre {tema} - {topico} e crie uma letra de música educativa seguindo todas as diretrizes estabelecidas.
 
@@ -87,6 +90,9 @@ ENTREGA ESPERADA:
 - Formatação limpa sem marcações técnicas
 - Texto pronto para ser copiado direto no Suno.com
 - Menções, de forma criativa e integrada, à Academia do Raciocínio como compositora. Faça isso 3 vezes ao longo da letra.
+-0,
+, 
+ A letra deve possuir, NO MÁXIMO, 4.700 caracteres
 """
 
 # System message para Revisor Jurídico

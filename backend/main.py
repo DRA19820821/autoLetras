@@ -8,8 +8,6 @@ from typing import Dict, List, Any
 from contextlib import asynccontextmanager
 import yaml
 from dotenv import load_dotenv
-from datetime import datetime
-import os
 
 # Configuração de Paths
 BACKEND_DIR = Path(__file__).parent
@@ -19,8 +17,33 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # Carregar Configs
 load_dotenv(PROJECT_ROOT / ".env")
 
-with open(PROJECT_ROOT / "config.yaml") as f:
-    CONFIG = yaml.safe_load(f)
+# CORREÇÃO: Usar DATA_DIR corretamente
+DATA_DIR_ENV = os.getenv("DATA_DIR", "data")
+if not DATA_DIR_ENV.startswith("/"):
+    DATA_DIR = PROJECT_ROOT / DATA_DIR_ENV
+else:
+    DATA_DIR = Path(DATA_DIR_ENV)
+
+INPUTS_DIR = DATA_DIR / "inputs"
+OUTPUTS_DIR = DATA_DIR / "outputs"
+LOGS_DIR = DATA_DIR / "logs"
+CHECKPOINTS_DIR = DATA_DIR / "checkpoints"
+
+# Criar diretórios
+for dir_path in [INPUTS_DIR, OUTPUTS_DIR, LOGS_DIR, CHECKPOINTS_DIR]:
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+print(f"[BACKEND] DATA_DIR: {DATA_DIR}")
+print(f"[BACKEND] INPUTS_DIR: {INPUTS_DIR}")
+print(f"[BACKEND] OUTPUTS_DIR: {OUTPUTS_DIR}")
+
+# Carregar config.yaml
+try:
+    with open(PROJECT_ROOT / "config.yaml") as f:
+        CONFIG = yaml.safe_load(f)
+except:
+    CONFIG = {}
+    print("[BACKEND] AVISO: config.yaml não encontrado, usando configurações padrão")
 
 # Importar módulos da aplicação
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form, Body
@@ -36,24 +59,17 @@ from backend.app.utils.logger import setup_logging, get_logger
 from backend.app.redis_client import redis_conn, get_redis_connection, set_execution_status, get_execution_status
 from backend.celery_worker import processar_arquivo_task
 
-# Diretórios
-DATA_DIR = PROJECT_ROOT / Path(os.getenv("DATA_DIR", "data"))
-INPUTS_DIR = DATA_DIR / "inputs"
-LOGS_DIR = DATA_DIR / "logs"
-for dir_path in [INPUTS_DIR, LOGS_DIR, DATA_DIR / "outputs", DATA_DIR / "checkpoints"]:
-    dir_path.mkdir(parents=True, exist_ok=True)
-
 # --- Lifespan e Configuração da Aplicação ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.logger = setup_logging(LOGS_DIR, "server", os.getenv("LOG_FORMAT", "legivel"), os.getenv("LOG_LEVEL", "INFO"))
     
     throttle_config = CONFIG.get('throttling', {}).get('limites', {})
-    init_throttler(throttle_config)
+    init_throttler(throttle_config or {"openai": 5, "anthropic": 5, "google": 8, "deepseek": 3})
     
     app.state.redis_pubsub = get_redis_connection().pubsub()
     
-    app.state.logger.info("server_started")
+    app.state.logger.info("server_started", data_dir=str(DATA_DIR), inputs_dir=str(INPUTS_DIR))
     yield
     app.state.logger.info("server_shutdown")
 
@@ -85,8 +101,6 @@ async def monitoring_page(request: Request, execucao_id: str):
 
 # --- Rotas da API ---
 
-# --- Rotas da API ---
-
 @app.get("/health")
 async def health():
     """Health check endpoint para monitoramento de instâncias."""
@@ -103,11 +117,18 @@ async def health():
         except:
             pass
         
+        # Contar arquivos
+        input_files = len(list(INPUTS_DIR.glob("*.html"))) if INPUTS_DIR.exists() else 0
+        output_files = len(list(OUTPUTS_DIR.glob("*.json"))) if OUTPUTS_DIR.exists() else 0
+        
         return {
             "status": "ok",
             "timestamp": datetime.now().isoformat(),
             "execucoes_ativas": execucoes,
-            "instance_id": os.getenv("INSTANCE_ID", "unknown")
+            "instance_id": os.getenv("INSTANCE_ID", "unknown"),
+            "data_dir": str(DATA_DIR),
+            "input_files": input_files,
+            "output_files": output_files
         }
     except Exception as e:
         return {
@@ -116,27 +137,30 @@ async def health():
             "timestamp": datetime.now().isoformat()
         }
 
-
 @app.post("/api/upload", response_class=HTMLResponse)
 async def upload_e_validar_arquivos(request: Request, files: List[UploadFile] = File(...)):
     """
     Recebe arquivos via HTMX, valida-os e retorna um fragmento de HTML com os resultados.
     """
-    # ... resto do código existente ...
-
-@app.post("/api/upload", response_class=HTMLResponse)
-async def upload_e_validar_arquivos(request: Request, files: List[UploadFile] = File(...)):
-    """
-    Recebe arquivos via HTMX, valida-os e retorna um fragmento de HTML com os resultados.
-    """
+    logger = get_logger()
     resultados = []
     all_valid = True
+    
+    logger.info(f"Recebendo {len(files)} arquivo(s) para upload em {INPUTS_DIR}")
+    
     for file in files:
         file_path = INPUTS_DIR / file.filename
         try:
-            with open(file_path, "wb") as f:
-                f.write(await file.read())
+            # CORREÇÃO: Garantir que o arquivo seja salvo no diretório correto
+            logger.info(f"Salvando arquivo: {file.filename} em {file_path}")
             
+            content = await file.read()
+            with open(file_path, "wb") as f:
+                f.write(content)
+            
+            logger.info(f"Arquivo salvo com sucesso: {file_path}")
+            
+            # Validar
             metadados = extrair_metadados(file_path)
             resultados.append(ArquivoValidacao(
                 arquivo=file.filename, valido=True, tema=metadados.tema,
@@ -145,9 +169,16 @@ async def upload_e_validar_arquivos(request: Request, files: List[UploadFile] = 
         except ValidationError as e:
             all_valid = False
             resultados.append(ArquivoValidacao(arquivo=file.filename, valido=False, erro=e.erro))
+            logger.error(f"Erro de validação para {file.filename}: {e.erro}")
         except Exception as e:
             all_valid = False
             resultados.append(ArquivoValidacao(arquivo=file.filename, valido=False, erro=str(e)))
+            logger.error(f"Erro ao processar {file.filename}: {str(e)}")
+    
+    # Listar arquivos no diretório após upload
+    if INPUTS_DIR.exists():
+        files_in_dir = list(INPUTS_DIR.glob("*.html"))
+        logger.info(f"Arquivos no diretório {INPUTS_DIR}: {[f.name for f in files_in_dir]}")
             
     return templates.TemplateResponse("partials/file_validation_results.html", {
         "request": request,
@@ -162,16 +193,28 @@ async def criar_execucao(request: IniciarExecucaoRequest):
     """
     execucao_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     logger = get_logger()
-    logger.info("execution_started", execucao_id=execucao_id, num_files=len(request.arquivos))
+    logger.info(f"execution_started: {execucao_id}, arquivos: {request.arquivos}, inputs_dir: {INPUTS_DIR}")
 
-    # Validar que os arquivos existem
+    # CORREÇÃO: Validar que os arquivos existem no diretório correto
+    arquivos_encontrados = []
+    arquivos_faltando = []
+    
     for arquivo in request.arquivos:
         arquivo_path = INPUTS_DIR / arquivo
-        if not arquivo_path.exists():
-            raise HTTPException(
-                status_code=400,
-                detail=f"Arquivo '{arquivo}' não encontrado. Por favor, faça o upload novamente."
-            )
+        if arquivo_path.exists():
+            arquivos_encontrados.append(arquivo)
+            logger.info(f"Arquivo confirmado: {arquivo_path}")
+        else:
+            arquivos_faltando.append(arquivo)
+            logger.error(f"Arquivo não encontrado: {arquivo_path}")
+    
+    if arquivos_faltando:
+        # Listar arquivos disponíveis
+        arquivos_disponiveis = [f.name for f in INPUTS_DIR.glob("*.html")] if INPUTS_DIR.exists() else []
+        raise HTTPException(
+            status_code=400,
+            detail=f"Arquivos não encontrados: {arquivos_faltando}. Arquivos disponíveis: {arquivos_disponiveis}"
+        )
 
     # Salvar estado inicial no Redis
     arquivos_status = [
@@ -187,6 +230,7 @@ async def criar_execucao(request: IniciarExecucaoRequest):
 
     # Enfileirar tarefas no Celery
     for arquivo_nome in request.arquivos:
+        logger.info(f"Enfileirando tarefa para: {arquivo_nome}")
         processar_arquivo_task.delay(execucao_id, arquivo_nome, request.config.dict())
 
     return JSONResponse(content={"execucao_id": execucao_id, "status": "iniciado"})
@@ -194,7 +238,7 @@ async def criar_execucao(request: IniciarExecucaoRequest):
 
 @app.get("/api/execucoes/{execucao_id}/stream")
 async def stream_execucao(execucao_id: str):
-    """Stream de atualizações via SSE - CORRIGIDO para async."""
+    """Stream de atualizações via SSE."""
     channel = f"execucao_status:{execucao_id}"
     logger = get_logger()
     
@@ -232,7 +276,6 @@ async def stream_execucao(execucao_id: str):
             last_message_time = time.time()
             keepalive_interval = 15
             
-            # CORRIGIDO: Loop não-bloqueante
             while True:
                 # get_message com timeout (não-bloqueante)
                 message = pubsub.get_message(timeout=1.0)

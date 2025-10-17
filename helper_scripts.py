@@ -54,15 +54,21 @@ def distribute_files(source_dir: Path, instances: dict, strategy: str = "round-r
     # Ordenar instâncias por ID
     sorted_instances = sorted(instances.items(), key=lambda x: int(x[0]))
     
+    # CORREÇÃO: Garantir que os arquivos sejam copiados para o diretório correto
+    files_distributed = {inst_id: [] for inst_id, _ in sorted_instances}
+    
     if strategy == "round-robin":
         # Distribuir sequencialmente
         for i, html_file in enumerate(html_files):
             instance_id, instance_info = sorted_instances[i % len(sorted_instances)]
+            # CORREÇÃO: Usar o caminho correto (sem duplicação)
             dest_dir = Path(instance_info['data_dir']) / 'inputs'
             dest_dir.mkdir(parents=True, exist_ok=True)
             
-            shutil.copy2(html_file, dest_dir)
-            print(f"✓ {html_file.name} → Instância {instance_id}")
+            dest_file = dest_dir / html_file.name
+            shutil.copy2(html_file, dest_file)
+            files_distributed[instance_id].append(html_file.name)
+            print(f"✓ {html_file.name} → Instância {instance_id} ({dest_file})")
     
     elif strategy == "balanced":
         # Distribuir em lotes equilibrados
@@ -74,17 +80,34 @@ def distribute_files(source_dir: Path, instances: dict, strategy: str = "round-r
             # Distribuir lote + 1 arquivo extra para primeiras instâncias (se houver resto)
             count = files_per_instance + (1 if int(instance_id) <= remainder else 0)
             
+            # CORREÇÃO: Usar o caminho correto
             dest_dir = Path(instance_info['data_dir']) / 'inputs'
             dest_dir.mkdir(parents=True, exist_ok=True)
             
             batch = html_files[start_idx:start_idx + count]
             
             print(f"\n📁 Instância {instance_id} ({len(batch)} arquivos):")
+            print(f"   Destino: {dest_dir}")
+            
             for html_file in batch:
-                shutil.copy2(html_file, dest_dir)
+                dest_file = dest_dir / html_file.name
+                shutil.copy2(html_file, dest_file)
+                files_distributed[instance_id].append(html_file.name)
                 print(f"   ✓ {html_file.name}")
             
             start_idx += count
+    
+    # Verificar distribuição
+    print("\n" + "=" * 70)
+    print("📊 RESUMO DA DISTRIBUIÇÃO:")
+    print("=" * 70)
+    for instance_id, files in files_distributed.items():
+        print(f"Instância {instance_id}: {len(files)} arquivo(s)")
+        if files:
+            for f in files[:3]:  # Mostrar até 3 arquivos
+                print(f"  - {f}")
+            if len(files) > 3:
+                print(f"  ... e mais {len(files) - 3}")
     
     print("\n" + "=" * 70)
     print("✅ Distribuição concluída!")
@@ -95,9 +118,6 @@ def distribute_files(source_dir: Path, instances: dict, strategy: str = "round-r
 # ============================================================================
 # 2. COLETAR RESULTADOS
 # ============================================================================
-
-from pathlib import Path
-import shutil
 
 def collect_results(output_dir: Path, instances: dict):
     """
@@ -118,45 +138,63 @@ def collect_results(output_dir: Path, instances: dict):
     print("=" * 70)
 
     total_files = 0
+    summary = {}
 
-    # Ordenação robusta: tenta converter o id para int; se não der, usa string
+    # Ordenação robusta
     def sort_key(item):
         k = str(item[0])
         return (0, int(k)) if k.isdigit() else (1, k)
 
     for instance_id, instance_info in sorted(instances.items(), key=sort_key):
-        # Novo layout: <data_dir>/instance_<id>/outputs
-        base_dir = Path(instance_info['data_dir'])
-        source_dir = base_dir / f"instance_{instance_id}" / "outputs"
-
-        # Fallback para layout antigo: <data_dir>/outputs
+        # CORREÇÃO: Usar o caminho correto (sem duplicação)
+        source_dir = Path(instance_info['data_dir']) / "outputs"
+        
         if not source_dir.exists():
-            legacy_dir = base_dir / "outputs"
-            if legacy_dir.exists():
-                source_dir = legacy_dir
-
-        if not source_dir.exists():
-            print(f"⚠️  Instância {instance_id}: sem diretório de outputs (verificado: {source_dir})")
+            print(f"⚠️  Instância {instance_id}: sem diretório de outputs")
+            summary[instance_id] = {"status": "sem_outputs", "files": 0}
             continue
 
         json_files = list(source_dir.glob("*.json"))
 
         if not json_files:
             print(f"ℹ️  Instância {instance_id}: sem resultados em {source_dir}")
+            summary[instance_id] = {"status": "vazio", "files": 0}
             continue
 
-        print(f"\n📁 Instância {instance_id} ({len(json_files)} arquivo(s)) de {source_dir}:")
+        print(f"\n📁 Instância {instance_id} ({len(json_files)} arquivo(s)):")
+        print(f"   Origem: {source_dir}")
+        
+        collected_files = []
         for json_file in json_files:
             # Renomeia para incluir a instância no nome final
-            new_name = f"i{instance_id}_{json_file.name}"
+            #new_name = f"i{instance_id}_{json_file.name}"
+            p = Path(json_file)
+            new_name = f"{p.stem}_i{instance_id}{p.suffix}"
             dest_file = output_dir / new_name
 
             shutil.copy2(json_file, dest_file)
+            collected_files.append(new_name)
             print(f"   ✓ {json_file.name} → {new_name}")
             total_files += 1
+        
+        summary[instance_id] = {
+            "status": "coletado",
+            "files": len(collected_files),
+            "samples": collected_files[:3]  # Primeiros 3 arquivos como amostra
+        }
 
+    # Resumo
     print("\n" + "=" * 70)
-    print(f"✅ {total_files} arquivo(s) coletado(s) em: {output_dir}")
+    print("📊 RESUMO DA COLETA:")
+    print("=" * 70)
+    for instance_id, info in summary.items():
+        print(f"Instância {instance_id}: {info['status']} ({info['files']} arquivos)")
+        if info.get('samples'):
+            for sample in info['samples']:
+                print(f"  - {sample}")
+    
+    print("\n" + "=" * 70)
+    print(f"✅ Total: {total_files} arquivo(s) coletado(s) em: {output_dir}")
 
 
 # ============================================================================
@@ -194,22 +232,24 @@ def monitor_all(instances: dict, follow: bool = False):
                 data = response.json()
                 return {
                     'status': 'online',
-                    'execucoes': data.get('execucoes_ativas', 0)
+                    'execucoes': data.get('execucoes_ativas', 0),
+                    'input_files': data.get('input_files', 0),
+                    'output_files': data.get('output_files', 0)
                 }
             else:
-                return {'status': 'error', 'execucoes': 0}
+                return {'status': 'error', 'execucoes': 0, 'input_files': 0, 'output_files': 0}
                 
         except:
-            return {'status': 'offline', 'execucoes': 0}
+            return {'status': 'offline', 'execucoes': 0, 'input_files': 0, 'output_files': 0}
     
     def display_stats():
         """Exibe estatísticas de todas as instâncias."""
         os.system('clear' if os.name != 'nt' else 'cls')
         
         print("📊 MONITOR DE INSTÂNCIAS")
-        print("=" * 80)
-        print(f"{'ID':<4} {'Status':<10} {'Backend':<20} {'Redis':<15} {'Execuções':<12}")
-        print("-" * 80)
+        print("=" * 90)
+        print(f"{'ID':<4} {'Status':<10} {'Backend':<20} {'Redis':<15} {'Exec':<6} {'Input':<8} {'Output':<8}")
+        print("-" * 90)
         
         for instance_id, instance_info in sorted(instances.items(), key=lambda x: int(x[0])):
             stats = get_instance_stats(instance_info)
@@ -223,9 +263,16 @@ def monitor_all(instances: dict, follow: bool = False):
             backend_url = f"localhost:{instance_info['backend_port']}"
             redis_url = f"localhost:{instance_info['redis_port']}"
             
-            print(f"{instance_id:<4} {status_icon} {stats['status']:<8} {backend_url:<20} {redis_url:<15} {stats['execucoes']:<12}")
+            print(f"{instance_id:<4} {status_icon} {stats['status']:<8} "
+                  f"{backend_url:<20} {redis_url:<15} "
+                  f"{stats['execucoes']:<6} {stats['input_files']:<8} {stats['output_files']:<8}")
         
-        print("=" * 80)
+        print("=" * 90)
+        
+        # Mostrar diretórios
+        print("\n📁 DIRETÓRIOS:")
+        for instance_id, instance_info in sorted(instances.items(), key=lambda x: int(x[0])):
+            print(f"   Instância {instance_id}: {instance_info['data_dir']}")
         
         if follow:
             print("\nAtualizando a cada 5 segundos... (Ctrl+C para sair)")
@@ -266,15 +313,17 @@ def clean_outputs(instances: dict, instance_id: str = None):
     print(f"\n🧹 Limpando outputs de {len(to_clean)} instância(s)")
     
     for inst_id, inst_info in to_clean.items():
+        # CORREÇÃO: Usar o caminho correto
         outputs_dir = Path(inst_info['data_dir']) / 'outputs'
         
         if not outputs_dir.exists():
+            print(f"ℹ️  Instância {inst_id}: diretório não existe")
             continue
         
         files = list(outputs_dir.glob("*.json"))
         
         if files:
-            print(f"\n📁 Instância {inst_id}:")
+            print(f"\n📁 Instância {inst_id} ({outputs_dir}):")
             for file in files:
                 file.unlink()
                 print(f"   🗑️  {file.name}")
@@ -282,6 +331,58 @@ def clean_outputs(instances: dict, instance_id: str = None):
             print(f"ℹ️  Instância {inst_id}: sem arquivos")
     
     print("\n✅ Limpeza concluída!")
+
+# ============================================================================
+# 5. VALIDAR ESTRUTURA (NOVO)
+# ============================================================================
+
+def validate_structure(instances: dict):
+    """
+    Valida a estrutura de diretórios das instâncias.
+    
+    Args:
+        instances: Dicionário de instâncias
+    """
+    print("\n🔍 VALIDANDO ESTRUTURA DE DIRETÓRIOS")
+    print("=" * 70)
+    
+    all_ok = True
+    
+    for instance_id, instance_info in sorted(instances.items(), key=lambda x: int(x[0])):
+        print(f"\n📁 Instância {instance_id}:")
+        data_dir = Path(instance_info['data_dir'])
+        
+        # Verificar diretório principal
+        if data_dir.exists():
+            print(f"  ✅ {data_dir}")
+        else:
+            print(f"  ❌ {data_dir} NÃO EXISTE")
+            all_ok = False
+            continue
+        
+        # Verificar subdiretórios
+        subdirs = ['inputs', 'outputs', 'checkpoints', 'logs']
+        for subdir in subdirs:
+            subdir_path = data_dir / subdir
+            if subdir_path.exists():
+                # Contar arquivos
+                files = list(subdir_path.glob("*"))
+                if files:
+                    print(f"  ✅ {subdir}/ ({len(files)} arquivos)")
+                else:
+                    print(f"  ✅ {subdir}/ (vazio)")
+            else:
+                print(f"  ❌ {subdir}/ NÃO EXISTE")
+                all_ok = False
+    
+    print("\n" + "=" * 70)
+    if all_ok:
+        print("✅ Estrutura de diretórios OK!")
+    else:
+        print("❌ Problemas encontrados na estrutura")
+        print("\nPara corrigir, execute:")
+        print("  python orchestrator.py stop --all")
+        print("  python orchestrator.py start --instances N")
 
 # ============================================================================
 # CLI
@@ -314,6 +415,9 @@ def main():
     clean_parser = subparsers.add_parser('clean', help='Limpar outputs')
     clean_parser.add_argument('--instance', help='ID específico')
     
+    # validate (novo)
+    validate_parser = subparsers.add_parser('validate', help='Validar estrutura')
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -333,6 +437,9 @@ def main():
     
     elif args.command == 'clean':
         clean_outputs(instances, args.instance)
+    
+    elif args.command == 'validate':
+        validate_structure(instances)
 
 if __name__ == "__main__":
     main()
